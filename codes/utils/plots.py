@@ -1,0 +1,308 @@
+#!/usr/bin/env python
+import os
+import numpy as np
+import pandas as pd
+import matplotlib.pyplot as plt
+import matplotlib.colors as MplColors
+from matplotlib.ticker import FormatStrFormatter
+from settings.paths import validation_path, img_path
+from utils.preprocessing import create_bins
+from utils.crossvalidation import metric_per_bin, count_bins
+
+
+plt.rcParams["font.size"] = 22
+plt.rcParams["ytick.minor.visible"] = True
+plt.rcParams["xtick.minor.visible"] = True
+
+CB_color_cycle = ["#377eb8", "#ff7f00", "#4daf4a",
+                  "#f781bf", "#a65628", "#984ea3",
+                  "#999999", "#e41a1c", "#dede00"]
+
+
+
+def cols2labels(colnames):
+    """cols2labels modifies column names for plots
+
+    Parameters
+    ----------
+    colnames : dict
+
+    Returns
+    -------
+    dict
+        Updated names
+    """    
+
+    for key, value in colnames.items():
+        try:
+            if colnames[key][1:] == "mag": #rmag, gmag,...
+                colnames[key] = value[0]
+
+            if "_" in colnames[key]: # W1_MAG, J0395_auto...
+                colnames[key] = value.split('_')[0]
+        except:
+            pass
+    return colnames
+
+def plot_r(data, new, save=False):
+    
+    fig = plt.figure(figsize=(10,5))
+    bins = np.arange(14,26,0.05)
+    data.query("r_iso!=99").r_iso.hist(bins=bins, density=True, alpha=0.6, label="sample")
+    new.query("r_iso!=99").r_iso.hist(bins=bins, density=True, alpha=0.6, label="true")
+    plt.legend()
+    plt.xlabel("r_iso")
+    plt.ylabel("Density")
+    plt.tight_layout()
+    
+    return fig
+
+
+def plot_z(data, new, save=False):
+    
+    fig = plt.figure(figsize=(10,5))
+    bins = np.arange(0,5,0.025)
+    new.query("Z>0 and Z<5").Z.hist(bins=bins, density=True, alpha=0.6, label="sample")
+    data.query("Z>0 and Z<5").Z.hist(bins=bins, density=True, alpha=0.6, label="true")
+    plt.legend()
+    plt.xlabel("z")
+    plt.ylabel("Density")
+    plt.tight_layout()
+
+    return fig
+
+
+def plot_metrics(metric, list_models):
+
+    if metric.__name__ == "sigma":
+        ylabel = "$\sigma_{NMAD}$"
+    elif metric.__name__ == "bias":
+        ylabel = "$\eta$"
+    elif metric.__name__ == "out_frac":
+        ylabel = "Outlier Fraction (%)"
+    else:
+        ylabel = "RMSE"
+
+    plt.figure(figsize=(10,6))
+    for key in list_models:
+        
+        if "aug" in key:
+            label = "XDGMM"
+        else:
+            label="Original"
+            
+        plt.plot(results[key]["bins"], results[key][metric.__name__])
+        plt.scatter(results[key]["bins"], results[key][metric.__name__], label=label)
+        
+    plt.xlim(0,5)
+    plt.grid(axis="y")
+    plt.ylabel(ylabel)
+    plt.xlabel("Spectroscopic Redshift")
+    plt.legend()
+
+
+# def plot_metric_per_bin(list_models, column, per="r", std=False, save=False):
+#     plt.rcParams["font.size"] = 22
+#     plt.rcParams["ytick.minor.visible"] = True
+#     plt.rcParams["xtick.minor.visible"] = True
+#     dict_df = {}
+#     string = str(list_models[0])
+
+#     for model in list_models:
+#         dict_df[model] = pd.read_table(os.path.join(validation_path, "metric_per_bin",
+#                                                     per+"_metrics_"+str(model)), sep=",", index_col="index")
+#         if model != list_models[0]:
+#             string = string+"x"+str(model)
+            
+#     fig, ax = plt.subplots(1,1, figsize=(10,6))
+#     for name, c in zip(dict_df, CB_color_cycle):
+        
+#         if per == "z":
+#             dict_df[name] = dict_df[name].query("bins<5")
+            
+#         ax.scatter(dict_df[name].bins, dict_df[name][column+"_median"], color=c)
+#         ax.plot(dict_df[name].bins, dict_df[name][column+"_median"], "--", label=name, color=c)
+        
+#         if std == True:
+#             ax.fill_between(
+#                 dict_df[name].bins,
+#                 dict_df[name][column+"_median"]-dict_df[name][column+"_median"[0:-6]+"std"],
+#                 dict_df[name][column+"_median"]+dict_df[name][column+"_median"[0:-6]+"std"], alpha=0.5, color=c)
+
+#     if per == "r":
+#         ax.set_xlabel("r")
+#     else:
+#         ax.set_xlabel("Spectroscopic Redshift")
+                
+#     # ax.legend()
+
+#     if column == "rmse":
+#         ax.set_ylabel(r"$\sigma_{RMSE}$")
+#     elif column == "out_frac":
+#         ax.set_ylabel(r"$\eta$")
+#     elif column == "bias":
+#         ax.set_ylabel("Bias")
+#     elif column == "mse":
+#         ax.set_ylabel("MSE")
+#     else:
+#         ax.set_ylabel(r"$\sigma_{NMAD}$")   
+        
+#     # ax.grid()
+#     fig.tight_layout()
+
+#     if save:
+#         plt.savefig(os.path.join(img_path, string+"_"+column+"_"+per+".png"),
+#                     bbox_inches="tight", facecolor="white", transparent=False)
+#     # ax.set_ylabel(dict_df[name][column+"_median"].name)
+    
+
+def plot_scatter_z(model, per="r", save=False):
+    plt.rcParams["font.size"] = 22
+    plt.rcParams["ytick.minor.visible"] = True
+    plt.rcParams["xtick.minor.visible"] = True
+
+    df = pd.read_table(os.path.join(validation_path, "original", "z_"+str(model)), sep=",", index_col="index")
+    
+    fig, [ax,ax2] = plt.subplots(2,1, figsize=(8,10), sharex=True, gridspec_kw={'height_ratios': [2,1]})
+    df_99 = df.query("r_PStotal==99")
+    df = df.drop(df_99.index)
+    
+    lim_mag = 20
+    df = df.query("r_PStotal <"+str(lim_mag))
+    
+    # df = df.query("r_iso > 20 and r_iso<22")
+    cmap = plt.cm.jet
+    # bounds = np.arange(15,20.5,0.5)
+    bounds = np.arange(15,22.5,0.5)
+    norm = MplColors.BoundaryNorm(bounds,cmap.N)
+
+    ax.grid()
+    points = ax.hexbin(df.Z, df.z_pred, C=df.r_PStotal, gridsize=100, mincnt=0,
+                       extent=(0,7,0,7), norm=norm, cmap=cmap, alpha=0.8)
+    ax.plot([0,1], [0,1], "k--", transform=ax.transAxes, linewidth=2)
+    ax.scatter(df_99.Z, df_99.z_pred, c="black", marker="o", edgecolor="white", s=60)
+
+    ax2.grid()
+    ax2.hexbin(df.Z, df.z_pred - df.Z, C=df.r_PStotal, gridsize=(100,30), mincnt=0,
+               extent=(0,7,-6.8,3.4), norm= norm, cmap = cmap, alpha=0.8)
+    ax2.scatter(df_99.Z, df_99.z_pred - df_99.Z, c="black", marker="o", edgecolor="white", s=60)
+    
+    ax2.axhline(0, color="black", linestyle="dashed")
+
+    ax.set_ylim(0,7)
+    ax.set_xlim(0,7)
+    ax2.set_ylim(-6.8,3.4)
+    ax2.set_xlim(0,7)
+    ax2.set_xlabel("Spectroscopic Redshift")
+    ax.set_ylabel(r"$\bar{z}$")
+    ax2.set_ylabel(r"$\bar{z}- z$")
+
+    ax.label_outer()
+    
+    plt.subplots_adjust(hspace=0.01)
+    cax = fig.add_axes([1., 0.1, 0.03, 0.86])
+    cbar = fig.colorbar(points, cax=cax, label="r magnitude")
+
+    plt.tight_layout()
+
+    if save:
+        plt.savefig(os.path.join(img_path, "scatter_z_per_"+per+"_lim"+str(lim_mag)+"_"+str(model)+".png"))
+    # ax.set_ylabel(dict_df[name][column+"_median"].name)
+
+
+
+def plot_metric_per_bin(list_models,data, metric,bins, color_feat, per="r_PStotal", cutoff = 5, std=False, save=False, idx= None):
+    string = str(list_models[0])
+    df_no99 = {}
+    result = {}
+    aux = {}
+    for model in list_models:
+        # aux[model] = data[model].query("r_PStotal!=99 or g_PStotal!= 99")
+        aux[model] = data[model].query("r_PStotal!=99")
+        aux[model] = aux[model].query("Z<" +str(cutoff))
+        df_no99[model] = data[model]
+        # df_no99[model]["g-r"] = aux[model].g_PStotal - aux[model].r_PStotal
+        # df_no99[model] = df_no99[model].loc[idx]
+
+        if model != list_models[0]:
+            string = string+"x"+str(model)
+    
+        result[model] = metrics_bin(df_no99[model], metric, bins = bins , var = per)
+    
+    fig, ax = plt.subplots(1,1, figsize=(10,7))
+
+    plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
+    # ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
+    for name in df_no99:
+        
+        # if per == "z":
+        #     result[name] = result[name].query("bins<5")
+            
+        ax.scatter(result[name].bins, result[name][metric.__name__+"_median"], color=color_feat[name])
+        ax.plot(result[name].bins, result[name][metric.__name__+"_median"], "--", label=name, color=color_feat[name])
+        
+        if std == True:
+            ax.fill_between(
+                result[name].bins,
+                result[name][metric.__name__+"_median"]-result[name][metric.__name__+"_median"[0:-6]+"std"],
+                result[name][metric.__name__+"_median"]+result[name][metric.__name__+"_median"[0:-6]+"std"], alpha=0.5, color=color_feat[name])
+
+    if per == "r_PStotal":
+        ax.set_xlabel("r")
+    elif per =="Z":
+        ax.set_xlabel("Spectroscopic Redshift")
+    else:
+        ax.set_xlabel("g-r")           
+    
+    if metric.__name__ == "rmse":
+        ax.set_ylabel(r"$\sigma_{RMSE}$")
+    elif metric.__name__ == "out_frac":
+        ax.set_ylabel(r"$\eta_{0.30}$")
+        plt.gca().set_ylim(bottom=0)
+    elif metric.__name__ == "bias":
+        ax.set_ylabel("Bias")
+    elif metric.__name__ == "mse":
+        ax.set_ylabel("MSE")
+    else:
+        ax.set_ylabel(r"$\sigma_{NMAD}$")   
+        
+    ax.grid()
+    if len(list_models)>1:
+        ax.legend(loc ="upper right", prop={"size":16})
+    # plt.legend()
+    plt.tight_layout()
+    if save:
+        # plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".png"),
+        #              facecolor="white", transparent=False)
+        plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".png"),
+                     facecolor="white", transparent=False)
+    
+    
+def metrics_bin(data, metric, bins="None", var="g-r"):
+    bins_r, itv_r = create_bins(data, return_data = False, var = var,  bins= bins)
+    bin_size = bins_r[1] - bins_r[0]
+    half_bins_r = np.arange(bins_r[0]+(bin_size/2), bins_r[-1]+bin_size/2, bin_size)
+    
+    list_folds = data.fold.unique()
+
+    original = pd.DataFrame()
+    for i in list_folds:
+        aux = data.query("fold == "+ str(i))
+        output_bin = metric_per_bin(metric = metric, z = aux, itvs = itv_r)
+        output_bin = pd.DataFrame(output_bin, columns={metric.__name__+"_fold"+str(i)})
+        original = pd.concat([original,output_bin], axis=1)
+        original.insert(0, "n_fold"+str(i), count_bins(aux, itv_r))
+        
+
+    result = pd.DataFrame()
+    aux = np.repeat(metric.__name__,5)
+    aux = [t+'_fold'+str(i) for i,t in enumerate(aux)] 
+    result.insert(0,metric.__name__+"_std", original[aux].T.std())
+    result.insert(0, metric.__name__+"_median", original[aux].T.median())
+    original.insert(0, "bins", half_bins_r)
+
+    aux = np.repeat("n_fold",5)
+    aux = [t+str(i) for i,t in enumerate(aux)]
+    result.insert(0, "n", original[aux].T.sum())
+    result.insert(0, "bins", half_bins_r)
+    return result

@@ -1,0 +1,70 @@
+import os
+
+#%%
+mycwd = os.path.abspath(os.getcwd())
+if mycwd.split(os.sep)[-1] == "qucats_paper":
+    parent_cwd = mycwd
+    codes_path = os.path.join(parent_cwd,"codes")
+    pass
+
+else:
+    os.chdir('..')
+    codes_path = os.path.abspath(os.getcwd())
+    os.chdir('..')
+    parent_cwd = os.path.abspath(os.getcwd())
+    os.chdir(mycwd)
+#%%
+
+
+
+data_path = os.path.join(parent_cwd, '_survey')
+if not os.path.exists(data_path):
+    os.makedirs(data_path)
+
+result_path = os.path.join(parent_cwd,  'results')
+if not os.path.exists(result_path):
+    os.makedirs(result_path)
+
+img_path = os.path.join(parent_cwd,  'img')
+if not os.path.exists(img_path):
+    os.makedirs(img_path)
+
+dust_path = os.path.join(data_path, "dustmaps")
+
+# -----
+match_path = os.path.join(data_path, 'crossmatch')
+if not os.path.exists(match_path):
+    os.makedirs(match_path)
+
+validation_path = os.path.join(data_path, 'crossvalidation')
+if not os.path.exists(validation_path):
+    os.makedirs(validation_path)
+
+
+# ------
+
+rf_path = os.path.join(result_path, 'validation' ,'rf')
+if not os.path.exists(rf_path):
+    os.makedirs(rf_path)
+
+flex_path = os.path.join(result_path,'validation', 'flexcode')
+if not os.path.exists(flex_path):
+    os.makedirs(flex_path)
+
+bnn_path = os.path.join(result_path,'validation', 'bnn')
+if not os.path.exists(bnn_path):
+    os.makedirs(bnn_path)
+
+
+# ------
+# rf_final_path = os.path.join(result_path, 'final' ,'rf')
+# if not os.path.exists(rf_final_path):
+#     os.makedirs(rf_final_path)
+
+# flex_final_path = os.path.join(result_path,'final', 'flexcode')
+# if not os.path.exists(flex_final_path):
+#     os.makedirs(flex_final_path)
+
+# bnn_final_path = os.path.join(result_path,'final', 'bnn')
+# if not os.path.exists(bnn_final_path):
+#     os.makedirs(bnn_final_path)
