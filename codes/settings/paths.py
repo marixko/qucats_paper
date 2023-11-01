@@ -17,7 +17,7 @@ else:
 
 
 
-data_path = os.path.join(parent_cwd, '_survey')
+data_path = os.path.join(parent_cwd, 'data')
 if not os.path.exists(data_path):
     os.makedirs(data_path)
 
@@ -25,18 +25,18 @@ result_path = os.path.join(parent_cwd,  'results')
 if not os.path.exists(result_path):
     os.makedirs(result_path)
 
-img_path = os.path.join(parent_cwd,  'img')
+img_path = os.path.join(parent_cwd,  '_img')
 if not os.path.exists(img_path):
     os.makedirs(img_path)
 
-dust_path = os.path.join(data_path, "dustmaps")
+dust_path = os.path.join(codes_path, "utils", "dustmaps")
 
 # -----
 match_path = os.path.join(data_path, 'crossmatch')
 if not os.path.exists(match_path):
     os.makedirs(match_path)
 
-validation_path = os.path.join(data_path, 'crossvalidation')
+validation_path = os.path.join(data_path, 'validation')
 if not os.path.exists(validation_path):
     os.makedirs(validation_path)
 
@@ -56,15 +56,3 @@ if not os.path.exists(bnn_path):
     os.makedirs(bnn_path)
 
 
-# ------
-# rf_final_path = os.path.join(result_path, 'final' ,'rf')
-# if not os.path.exists(rf_final_path):
-#     os.makedirs(rf_final_path)
-
-# flex_final_path = os.path.join(result_path,'final', 'flexcode')
-# if not os.path.exists(flex_final_path):
-#     os.makedirs(flex_final_path)
-
-# bnn_final_path = os.path.join(result_path,'final', 'bnn')
-# if not os.path.exists(bnn_final_path):
-#     os.makedirs(bnn_final_path)
