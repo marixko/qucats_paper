@@ -1,13 +1,13 @@
 from collections import OrderedDict 
 import itertools
 
-# aper = "iso"
+aper = "PStotal"
 specz = "Z"
 
 feat_broad = ['u', 'g', 'r', 'i', 'z']
 feat_narrow = ['J0378', 'J0395', 'J0410', 'J0430',
          'J0515', 'J0660', 'J0861']
-wise = ["W1_MAG", "W2_MAG"]
+wise = ["W1", "W2"]
 galex = ['FUVmag', 'NUVmag']
 
 feat = feat_broad+feat_narrow
