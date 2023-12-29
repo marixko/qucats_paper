@@ -1,10 +1,47 @@
+import warnings
 import numpy as np
 import pandas as pd
-from settings.columns import wise, galex, splus
+from settings.columns import wise, galex, splus, aper
 
 pd.set_option('mode.chained_assignment',None)
 
+def mag_redshift_selection(dataframe:pd.core.frame.DataFrame, rmax = "None", rmin = "None", zmax = "None", zmin = "None"):
+    df = dataframe.copy()
+    
+    if rmax !=  "None":
+        df = df.loc[(df['r'+'_'+aper]<=rmax)|(df['r'+'_'+aper]==99)]
+
+    if rmin !=  "None":
+        df = df.loc[(df['r'+'_'+aper]>rmin)|(df['r'+'_'+aper]==99)]
+
+    if zmax !=  "None":
+        df = df.loc[(df['Z']<=zmax)]
+    
+    if zmin !=  "None":
+        df = df.loc[(df['Z']>zmin)]
+    return df
+
+def prep_wise(dataframe:pd.core.frame.DataFrame):
+    df = dataframe.copy()
+    df['FW1'] = df['FW1'].replace(0, np.nan)
+    df['FW2'] = df['FW2'].replace(0, np.nan)
+    df["W1"] = 22.5 - 2.5 * np.log10(df["FW1"])
+    df["W2"] = 22.5 - 2.5 * np.log10(df["FW2"])
+    return df
+
+
+def missing_input(dataframe:pd.core.frame.DataFrame, input_value = 99):
+    df = dataframe.copy()
+    df[wise+galex] = df[wise+galex].fillna(value=input_value)
+    if input_value != 99:
+        df[splus] = df[splus].replace(99, input_value)
+    return df
+
+
 def prep_data(dataframe:pd.core.frame.DataFrame, aper, rmax = "None", rmin = "None", zmax = "None", zmin = "None", val_mb="None"):
+    warnings.warn("This function is deprecated. Use mag_redshift_selection() and missing_input() instead for the reviewed version.",
+                  DeprecationWarning )
+    
     df = dataframe.copy()
     
     if rmax !=  "None":
@@ -55,7 +92,6 @@ def create_bins(data:pd.core.frame.DataFrame, return_data = False, var = "Z", bi
         return data, bins, itv
     else:
         return bins, itv
-
 
 
 def rename_aper(data):
