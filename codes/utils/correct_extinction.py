@@ -1,5 +1,5 @@
 import pandas as pd
-import sfdmap
+from utils import sfdmap
 import extinction
 import numpy as np
 from settings.columns import splus, wise, galex
@@ -8,7 +8,7 @@ from settings.paths import dust_path
 def correction(data):
     chunk = data.copy(deep=True)
 
-    feat = galex+splus+wise
+    feat = galex + splus + wise
     m = sfdmap.SFDMap(dust_path)
     EBV = m.ebv(chunk.RA_1, chunk.DEC_1)
 
@@ -31,6 +31,6 @@ def correction(data):
     mask_99 = chunk[feat]==99
     chunk[feat] = chunk[feat].sub(Extinction_DF)
     chunk[feat] = chunk[feat].mask(mask_99, other = 99)
-    chunk.index=data.index
+    chunk.index = data.index
     return chunk
 
