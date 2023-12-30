@@ -24,8 +24,8 @@ def create_features(aper):
             "splus": {"broad": None, "narrow": None},
             "galex": None}
 
-    features["wise"] = {"W1_MAG": 34000,
-            "W2_MAG": 46000}
+    features["wise"] = {"W1": 34000,
+            "W2": 46000}
 
     features["galex"] = {'FUVmag': 1528,
             'NUVmag': 2310}

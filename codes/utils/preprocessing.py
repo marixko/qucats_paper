@@ -9,7 +9,8 @@ def mag_redshift_selection(dataframe:pd.core.frame.DataFrame, rmax = "None", rmi
     df = dataframe.copy()
     
     if rmax !=  "None":
-        df = df.loc[(df['r'+'_'+aper]<=rmax)|(df['r'+'_'+aper]==99)]
+        # print(df.loc[(df['r'+'_'+aper]<=rmax) | (df['r'+'_'+aper]==99)])
+        df = df.loc[(df['r'+'_'+aper]<=rmax) | (df['r'+'_'+aper]==99)]
 
     if rmin !=  "None":
         df = df.loc[(df['r'+'_'+aper]>rmin)|(df['r'+'_'+aper]==99)]
@@ -29,12 +30,23 @@ def prep_wise(dataframe:pd.core.frame.DataFrame):
     df["W2"] = 22.5 - 2.5 * np.log10(df["FW2"])
     return df
 
+def flag_observation(dataframe:pd.core.frame.DataFrame):
+    df = dataframe.copy()
+
+    df["flag_GALEX"] = 0
+    df.loc[df["name"].isna(),"flag_GALEX"]=1
+
+    df["flag_WISE"] = 0
+    df.loc[df["objID_x"].isna(),"flag_WISE"]=1
+
+    return df
 
 def missing_input(dataframe:pd.core.frame.DataFrame, input_value = 99):
     df = dataframe.copy()
     df[wise+galex] = df[wise+galex].fillna(value=input_value)
     if input_value != 99:
         df[splus] = df[splus].replace(99, input_value)
+
     return df
 
 
