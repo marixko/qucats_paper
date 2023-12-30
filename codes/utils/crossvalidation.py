@@ -114,7 +114,7 @@ def print_metrics(z, cutoff=None, xval=True):
     if xval:
         for fold in z.fold.unique():
             rmse_list.append(rmse(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
-            sigma_list.append(sigma(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
+            sigma_list.append(nmad(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
             bias_list.append(bias(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
             n30_list.append(out_frac(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred, 0.3))
             n15_list.append(out_frac(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred, 0.15))
