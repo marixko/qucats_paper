@@ -26,7 +26,7 @@ def correction(data):
         Extinctions.append(extinction.ccm89(Lambdas, AV[i], 3.1))
 
     Extinction_DF = pd.DataFrame(Extinctions, columns=feat)
-    chunk = chunk.reset_index(drop=True)
+    # chunk = chunk.reset_index(drop=True)
 
     mask_99 = chunk[feat]==99
     chunk[feat] = chunk[feat].sub(Extinction_DF)
