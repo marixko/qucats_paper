@@ -2,12 +2,12 @@ import pandas as pd
 import numpy as np
 import warnings
 
-def sigma(y:pd.core.frame.Series, y_pred:pd.core.frame.Series) -> float:
+def nmad(y:pd.core.frame.Series, y_pred:pd.core.frame.Series) -> float:
     try:
         with warnings.catch_warnings():
             warnings.simplefilter('ignore')    
-            sigma = 1.48 * np.median(np.abs(y_pred-y - np.median(y_pred-y)) / (1+y))
-        return sigma
+            nmad = 1.48 * np.median(np.abs(y_pred-y - np.median(y_pred-y)) / (1+y))
+        return nmad
     except:
         return np.nan
 
@@ -48,11 +48,3 @@ def rmse(y:pd.core.frame.Series, y_pred:pd.core.frame.Series) -> float:
         return rmse
     except:
         return np.nan 
-
-
-# def bias_std(y:pd.core.frame.Series, y_pred:pd.core.frame.Series) -> float:
-#     try:
-#         std = np.std(y_pred-y)
-#         return std
-#     except:
-#         return np.nan
