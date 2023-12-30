@@ -48,6 +48,8 @@ def xval(train, zclass_train, feat, filename, aper, save_data=False, save_model=
         mag_train_cv["fold"+str(i)], mag_val_cv["fold"+str(i)] = train.iloc[train_index], train.iloc[val_index]
         z_train_cv["fold"+str(i)], z_val_cv["fold"+str(i)] = train.iloc[train_index].Z, train.iloc[val_index].Z
         if save_data:
+            mag_train_cv["fold"+str(i)].index.name = "index"
+            mag_val_cv["fold"+str(i)].index.name = "index"
             mag_train_cv["fold"+str(i)].to_csv(os.path.join(validation_path,"trainf"+str(i)+".csv"), sep=",")
             mag_val_cv["fold"+str(i)].to_csv(os.path.join(validation_path,"valf"+str(i)+".csv"), sep=",")
     
