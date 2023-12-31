@@ -8,7 +8,7 @@ from matplotlib.gridspec import GridSpec
 from matplotlib import cm
 from IPython.display import display
 
-from utils.metrics import sigma as nmad, bias, rmse, out_frac as outf
+from utils.metrics import nmad, bias, rmse, out_frac as outf
 
 
 def ecdf(sample) -> tuple:
