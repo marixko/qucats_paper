@@ -1,21 +1,18 @@
-import os
-from pathlib import Path
+import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 import sys
+from pathlib import Path
 from random import seed
 from time import sleep
 from threading import Thread
-
-import numpy as np
-import tensorflow as tf
-
 import warnings
 warnings.filterwarnings('ignore', category=FutureWarning)
 warnings.filterwarnings('ignore', category=UserWarning)
 warnings.filterwarnings('ignore', category=Warning)
-os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-tf.get_logger().setLevel('ERROR')
 
-aux = os.path.join(Path.cwd(), "codes")
+import numpy as np
+import tensorflow as tf; tf.get_logger().setLevel('ERROR')
+
+aux = os.path.join(Path.cwd(), 'codes')
 if str(aux) not in sys.path:
     sys.path.append(aux)
 
@@ -27,21 +24,18 @@ from model.final_prediction import PredictForFileNoTry
 from visualization.plots import Benchmarks
 
 
-train_data = 'iDR3n4_DR16Q_GALEX2_unWISE2-ren.csv'
-Seed = 47
+data = 'iDR3n4_DR16Q_GALEX2_unWISE2-ren.csv'
+model_seed = 47
 scheme = 'KFold'
 train = True
 predict = True
-correct_ext = True
 
-magnitudes = ['broad', 'narrow', 'wise', 'galex']
+mags = ['broad', 'narrow', 'wise', 'galex']
 configs = {'mag': False, 'col': True, 'rat': False}
 aperture = 'PStotal'
-Conds = [f'r_{aperture} <= 22 | r_{aperture} == 99', 'Z <= 7']
-final_predict_path = ''  # ARRUMAR
+final_predict_path = ''  # CHECK LATER
 
-feat = '_'+''.join([m[0].upper() for m in magnitudes])
-obs = '_masktest'
+obs = '_preptest8'
 if scheme == 'KFold':
     test_frac = 0.25
     model_path = os.path.join(results_path, f'crossval_model{obs}', '')
@@ -74,37 +68,34 @@ os.environ['PYTHONHASHSEED'] = str(0)
 
 if train:
     print(f'Training ({scheme})')
-    Model, Model_Fit = train_model(Filename=train_data, Aper=aperture, magnitudes=magnitudes, Test_Frac=test_frac,
-                                   Bin_Size=0.5, Plot_Preprocessing=False, Configs=configs, Conds=Conds, Seed=Seed,
-                                   correct_ext=correct_ext, Scheme=scheme, Plot_Train=False, Output_Dir=model_path)
-    plot_loss(scheme, model_path)
+    Model, Model_Fit = train_model(filename=data, magnitudes=mags, configs=configs, test_frac=test_frac,
+                                   seed=model_seed, output_dir=model_path, scheme=scheme)
+    plot_loss(scheme, model_seed, model_path)
 
 if predict:
     print(f'Loading + sampling')
+    print(f'Scheme: {scheme}')
 
     if scheme == 'KFold':
 
-        Model, Dataset, Testing_Data_Features = load(Filename=train_data, Aper=aperture, magnitudes=magnitudes,
-                                                     Test_Frac=test_frac, Bin_Size=0.5, Plot_Preprocessing=False,
-                                                     Configs=configs, Conds=Conds, Seed=Seed, correct_ext=correct_ext,
-                                                     Dir=model_path, Load_Samples=True)
-
-        Result_DF, Final_PDFs, x = sampling(Aper=aperture, Model=Model, Testing_Dataframe=Dataset,
-                                            Testing_Data_Features=Testing_Data_Features, Num_Samples=200,
-                                            Output_PDFs=True)
+        Model, Dataset, Testing_Data_Features = load(filename=data, magnitudes=mags, configs=configs,
+                                                     test_frac=test_frac, seed=model_seed, input_dir=model_path,
+                                                     load_samples=True)
+        
+        Result_DF, Final_PDFs, x = sampling(Model=Model, Testing_Dataframe=Dataset,
+                                            Testing_Data_Features=Testing_Data_Features)
 
         Result_DF.to_csv(model_path+'Results_DF.csv', index=False)
         np.savetxt(model_path+'x.txt', x)
         
         bench_path = os.path.join(model_path, 'benchmarks', '')
         if not os.path.isdir(bench_path): os.makedirs(bench_path)
-        Benchmarks(Result_DF, Final_PDFs, x, aperture, zlim, {'z': (0, 5, 10), 'r_'+aperture: (16, 22, 12)}, Seed,
+        Benchmarks(Result_DF, Final_PDFs, x, aperture, zlim, {'z': (0, 5, 10), 'r_'+aperture: (16, 22, 12)}, model_seed,
                    bench_path, Bench_Dict, DarkMode=False, Save=True, Show=False, Close=True)
         print()
 
     else:
-        print(f'PREDICTING {scheme} 3')
-
+        
         # To run the code with GPU, set Run_on_GPU to True
         # https://stackoverflow.com/questions/37660312/how-to-run-tensorflow-on-cpu
         Run_on_GPU = False
@@ -130,7 +121,7 @@ if predict:
         Processes = {}
         for i in range(len(Threads)-1):
             Processes[i] = Thread(target=PredictForFileNoTry,
-                                  args=(Files[Threads[i]:Threads[i+1]], aperture, magnitudes, configs, folders))
+                                  args=(Files[Threads[i]:Threads[i+1]], mags, configs, folders))
 
         for lista in np.array_split(np.arange(0, len(Threads)-1), np.ceil(len(Threads)/Files_to_predict_parallel)):
             print('# Starting threads:', lista)

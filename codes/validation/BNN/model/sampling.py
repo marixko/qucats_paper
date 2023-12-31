@@ -19,7 +19,7 @@ def Calc_PDF(x, Weights, Means, STDs):
     return PDF/np.trapz(PDF, x)
 
 
-def sampling(Aper:str, Model:dict, Testing_Dataframe:dict, Testing_Data_Features, Num_Samples=200, Output_PDFs=True):
+def sampling(Model:dict, Testing_Dataframe:dict, Testing_Data_Features, Num_Samples=200, Output_PDFs=True, aper='PStotal'):
 
     Folds = Model.keys()
     print(f"# Predicting for {len(Folds)} folds")
@@ -28,10 +28,9 @@ def sampling(Aper:str, Model:dict, Testing_Dataframe:dict, Testing_Data_Features
     Testing_Data_Target = Testing_Dataframe['Test']['Z'].values
     Result_DF = pd.DataFrame()
     Result_DF['ID_SPLUS'] = Testing_Dataframe['Test']['ID'].values
-    Result_DF['RA'] = Testing_Dataframe['Test']['RA'].values
-    Result_DF['DEC'] = Testing_Dataframe['Test']['DEC'].values
-    Result_DF['nDet_'+Aper] = Testing_Dataframe['Test']['nDet_'+Aper].values
-    Result_DF['r_'+Aper] = Testing_Dataframe['Test']['r_'+Aper].values
+    Result_DF['RA'] = Testing_Dataframe['Test']['RA_1'].values
+    Result_DF['DEC'] = Testing_Dataframe['Test']['DEC_1'].values
+    Result_DF['r_'+aper] = Testing_Dataframe['Test']['r_'+aper].values
     Result_DF['z'] = Testing_Data_Target
     
     Fold_Weights = {}
@@ -166,7 +165,7 @@ def sampling(Aper:str, Model:dict, Testing_Dataframe:dict, Testing_Data_Features
             Result_DF[f'PDF_Mean_{i}'] = Final_Means[:,i]
         for i in range(len(Final_STDs[0])):
             Result_DF[f'PDF_STD_{i}'] = Final_STDs[:,i]
-        
+
     return Result_DF, Final_PDFs, x
 
 
@@ -176,8 +175,8 @@ def FinalPredict(Model:dict, Testing_Dataframe, Testing_Data_Features, Num_Sampl
     
     Result_DF = pd.DataFrame()
     Result_DF['ID'] = Testing_Dataframe['ID'].values
-    Result_DF['RA'] = Testing_Dataframe['RA'].values
-    Result_DF['DEC'] = Testing_Dataframe['DEC'].values
+    Result_DF['RA'] = Testing_Dataframe['RA_1'].values
+    Result_DF['DEC'] = Testing_Dataframe['DEC_1'].values
     
     Samples_Weights = []
     Samples_Means = []

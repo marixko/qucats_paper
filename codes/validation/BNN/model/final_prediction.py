@@ -5,10 +5,12 @@ import tensorflow as tf
 from tqdm import tqdm
 import joblib
 
-from model.preprocessing import Process_Final, Correct_Extinction
+from utils.correct_extinction import correction
+from model.preprocessing import Process_Final
 from model.sampling import FinalPredict
 
-def PredictForFileNoTry(files_list:list, aper:str, magnitudes:list, configs:dict, folders:dict):
+def PredictForFileNoTry(files_list:list, magnitudes:list, configs:dict, folders:dict):
+    '''CHECK LATER'''
     
     # Loading the model
     model = os.path.join(folders['model'], 'SavedModels')
@@ -43,15 +45,10 @@ def PredictForFileNoTry(files_list:list, aper:str, magnitudes:list, configs:dict
         if Pred_in_chunks:
             for chunk in pd.read_csv(os.path.join(folders['input'], f'{file}.csv'), chunksize=ChunkSize):
 
-                try: 
-                    chunk.rename(columns={'B_in': 'B'}, inplace=True)
-                except:
-                    pass
-
                 chunk = chunk.reset_index(drop=True)
-                chunk = Correct_Extinction(chunk, aper)
+                chunk = correction(chunk)
 
-                PredictSample, PredictFeatures, PredictMask = Process_Final(chunk, aper, magnitudes, configs)
+                PredictSample, PredictFeatures, PredictMask = Process_Final(chunk, magnitudes, configs)
                 PredictSample_Features = Scaler_2.transform(Scaler_1.transform(PredictSample[PredictFeatures]))
                 PredictSample_Features[PredictMask] = 0
 
@@ -69,9 +66,9 @@ def PredictForFileNoTry(files_list:list, aper:str, magnitudes:list, configs:dict
                 pass
 
             chunk = chunk.reset_index(drop=True)
-            chunk = Correct_Extinction(chunk, aper)
+            chunk = correction(chunk)
 
-            PredictSample, PredictFeatures, PredictMask = Process_Final(chunk, aper, magnitudes, configs)
+            PredictSample, PredictFeatures, PredictMask = Process_Final(chunk, magnitudes, configs)
             PredictSample_Features = Scaler_2.transform(Scaler_1.transform(PredictSample[PredictFeatures]))
             PredictSample_Features[PredictMask] = 0
 

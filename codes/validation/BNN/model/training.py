@@ -14,42 +14,39 @@ from model.preprocessing import Process_Split
 from model.network import Dense_Variational, Epochs, Batch_Size, Activation, Opt
 
 
-def config_model(Filename:str, Aper:str, magnitudes:list, Test_Frac:float, Bin_Size:float, Plot_Preprocessing:bool,
-                 Configs:dict, Conds:list, Seed:float, correct_ext:bool, Scheme:str, Output_Dir:str):
+def config_model(filename:str, magnitudes:list, configs:dict, test_frac:float, seed:int, output_dir:str, scheme:str):
     
     Dataset = {}
     
-    if Scheme == 'AllTrain':
+    if scheme == 'AllTrain':
         Dataset['Train'], Train_Var, Scaler_1, Scaler_2, TrainMask \
-            = Process_Split(Filename, Aper, magnitudes, Test_Frac, Bin_Size, Plot_Preprocessing, Configs, Conds, Seed,
-                            correct_ext, Output_Dir, True)
+            = Process_Split(filename, magnitudes, configs, test_frac, seed, output_dir)
         Save_IDs = pd.DataFrame()
-        Dataset['Train']['ID'].to_csv(Output_Dir+'Train_IDs.csv', index=False)
+        Dataset['Train']['ID'].to_csv(output_dir+'Train_IDs.csv')
         Testing_Data_Features = np.array([])
     
     else:
         Dataset['Train'], Dataset['Test'], Train_Var, Scaler_1, Scaler_2, TrainMask, TestMask \
-            = Process_Split(Filename, Aper, magnitudes, Test_Frac, Bin_Size, Plot_Preprocessing, Configs, Conds, Seed,
-                            correct_ext, Output_Dir, True)
+            = Process_Split(filename, magnitudes, configs, test_frac, seed, output_dir)
         Save_IDs = pd.DataFrame()
         Save_IDs['ID'] = Dataset['Train']['ID'].reset_index(drop=True)
-        Dataset['Test']['ID'].to_csv(Output_Dir+'Test_IDs.csv', index=False)
+        Dataset['Test']['ID'].to_csv(output_dir+'Test_IDs.csv')
         Testing_Data_Features = Scaler_2.transform(Scaler_1.transform(Dataset['Test'][Train_Var].values))
         Testing_Data_Features[TestMask] = 0
-    
+        
     Training_Data_Features = Scaler_2.transform(Scaler_1.transform(Dataset['Train'][Train_Var].values))
     Training_Data_Features[TrainMask] = 0
     Training_Data_Target = np.squeeze(Dataset['Train']['Z'].values)
 
-    joblib.dump(Scaler_1, Output_Dir+'/Scaler_1_Quantile.joblib')
-    joblib.dump(Scaler_2, Output_Dir+'/Scaler_2_MinMax.joblib')
+    joblib.dump(Scaler_1, output_dir+'/Scaler_1_Quantile.joblib')
+    joblib.dump(Scaler_2, output_dir+'/Scaler_2_MinMax.joblib')
     
     return Dataset, Training_Data_Features, Training_Data_Target, Testing_Data_Features, Train_Var, Save_IDs
 
 
-def plot_kfold(SKfold, Training_Data_Features, Testing_Data_Features, Train_Var, Training_Data_Zclass, Output_Dir:str):
+def plot_kfold(skfold, Training_Data_Features, Testing_Data_Features, Train_Var:list, Training_Data_Zclass, output_dir:str):
     
-    fig, ax = plt.subplots(figsize=(20,20))
+    fig, _ = plt.subplots(figsize=(20,20))
     plt.subplots_adjust(hspace=0.5, wspace=0.5)
 
     plt_idx = 1
@@ -59,7 +56,7 @@ def plot_kfold(SKfold, Training_Data_Features, Testing_Data_Features, Train_Var,
         Feature_min = 0
         Feature_max = 1
 
-        for train, validation in SKfold.split(Training_Data_Features, Training_Data_Zclass):
+        for train, validation in skfold.split(Training_Data_Features, Training_Data_Zclass):
             plt.hist(Training_Data_Features[train][:,feat_idx], lw=2, range=(Feature_min, Feature_max),
                     bins=20, histtype='step')
             plt.hist(Training_Data_Features[validation][:,feat_idx], lw=2, range=(Feature_min, Feature_max),
@@ -73,11 +70,11 @@ def plot_kfold(SKfold, Training_Data_Features, Testing_Data_Features, Train_Var,
         plt_idx += 1
 
     fig.tight_layout()
-    plt.savefig(Output_Dir + 'KFold_Distributions.pdf', bbox_inches='tight')
-    plt.show()
+    plt.savefig(output_dir+'KFold_Distributions.pdf', bbox_inches='tight')
+    plt.close()
 
 
-def all_train(Dataset:dict, Training_Data_Features, Training_Data_Target, Train_Var, Seed:int, Output_Dir:str):
+def all_train(Dataset:dict, Training_Data_Features, Training_Data_Target, Train_Var:list, seed:int, output_dir:str):
     
     TimeNow = datetime.now().strftime('%d-%m-%Y/%Hh%Mm')
     Model = {}
@@ -92,7 +89,7 @@ def all_train(Dataset:dict, Training_Data_Features, Training_Data_Target, Train_
     print()
 
     # Custom metrics
-    CheckpointFolderEpoch = Output_Dir + f'Checkpoints/Fold{fold_number}'+'/Epoch{epoch:02d}'
+    CheckpointFolderEpoch = output_dir + f'Checkpoints/Fold{fold_number}' + '/Epoch{epoch:02d}'
     CheckpointEpoch = callbacks.ModelCheckpoint(CheckpointFolderEpoch, verbose=0, period=300)
 
     Model[fold_number] = Dense_Variational(
@@ -105,23 +102,22 @@ def all_train(Dataset:dict, Training_Data_Features, Training_Data_Target, Train_
                                                     sample_weight=Dataset['Train']['weights'].values)
 
     # Save the model
-    Save_Dir = Output_Dir + f'SavedModels/Fold{fold_number}'
+    Save_Dir = output_dir + f'SavedModels/Fold{fold_number}'
     Model[fold_number].save(Save_Dir, overwrite=True)
-    pd.DataFrame(Model_Fit[fold_number].history).to_csv(Save_Dir + '/Seed' + str(Seed) + f'_Fold{fold_number}.csv')
+    pd.DataFrame(Model_Fit[fold_number].history).to_csv(Save_Dir + '/Seed' + str(seed) + f'_Fold{fold_number}.csv')
     print()
     
     return Model, Model_Fit, len(train)
 
 
-def kfold(Dataset:dict, Training_Data_Features, Training_Data_Target, Testing_Data_Features, Train_Var, Save_IDs,
-          Seed:int, Plot_KFold:bool, Output_Dir:str):
+def kfold(Dataset:dict, Training_Data_Features, Training_Data_Target, Testing_Data_Features, Train_Var:list, Save_IDs,
+          seed:int, output_dir:str):
     
     Training_Data_Zclass = Dataset['Train']['Zclass']
-    skfold = sklearn.model_selection.StratifiedKFold(n_splits=5, shuffle=True, random_state=Seed)
+    skfold = sklearn.model_selection.StratifiedKFold(n_splits=5, shuffle=True, random_state=seed)
     fold_number = 0
 
-    if Plot_KFold:
-        plot_kfold(skfold, Training_Data_Features, Testing_Data_Features, Train_Var, Training_Data_Zclass, Output_Dir)
+    plot_kfold(skfold, Training_Data_Features, Testing_Data_Features, Train_Var, Training_Data_Zclass, output_dir)
     
     TimeNow = datetime.now().strftime('%d-%m-%Y/%Hh%Mm')
     Model = {}
@@ -141,10 +137,10 @@ def kfold(Dataset:dict, Training_Data_Features, Training_Data_Target, Testing_Da
 
         Save_IDs[f'Fold_{fold_number}'] = 'V'
         Save_IDs[f'Fold_{fold_number}'][train] = 'T'
-        Save_IDs.to_csv(Output_Dir+'Train_IDs.csv', index=False)
+        Save_IDs.to_csv(output_dir+'Train_IDs.csv', index=False)
 
         # Custom metrics
-        CheckpointFolderEpoch = Output_Dir + f'Checkpoints/Fold{fold_number}'+'/Epoch{epoch:02d}'
+        CheckpointFolderEpoch = output_dir + f'Checkpoints/Fold{fold_number}' + '/Epoch{epoch:02d}'
         CheckpointEpoch = callbacks.ModelCheckpoint(CheckpointFolderEpoch, verbose=0, period=500)
 
         # Compiling new model for each fold
@@ -160,37 +156,37 @@ def kfold(Dataset:dict, Training_Data_Features, Training_Data_Target, Testing_Da
                                                         callbacks=[TqdmCallback(verbose=0)])
 
         # Save the model and loss
-        Save_Dir = Output_Dir + f'SavedModels/Fold{fold_number}'
+        Save_Dir = output_dir + f'SavedModels/Fold{fold_number}'
         Model[fold_number].save(Save_Dir, overwrite=True)
-        pd.DataFrame(Model_Fit[fold_number].history).to_csv(Save_Dir + '/Seed' + str(Seed) + f'_Fold{fold_number}.csv')
+        pd.DataFrame(Model_Fit[fold_number].history).to_csv(Save_Dir + '/Seed' + str(seed) + f'_Fold{fold_number}.csv')
         fold_number += 1
         print()
         
         # Saving training IDs + Folds
-        Save_IDs.to_csv(Output_Dir+'Train_IDs.csv', index=False)
+        Save_IDs.to_csv(output_dir+'Train_IDs.csv', index=False)
         
     return Model, Model_Fit, len(train)
     
     
-def save_model(Scheme:str, Filename:str, Dataset:dict, Training_Data_Features, Train_Var, Model:dict, len_train:int,
-               Output_Dir:str):
+def save_model(scheme:str, filename:str, Dataset:dict, Training_Data_Features, Train_Var:list, Model:dict, len_train:int,
+               output_dir:str):
     
     # Save model summary to file with some extra info
     #https://stackoverflow.com/questions/45199047/how-to-save-model-summary-to-file-in-keras
-    with open(Output_Dir+'Model_Summary.txt', 'w') as f:
+    with open(output_dir+'Model_Summary.txt', 'w') as f:
         Model[0].summary(print_fn=lambda x: f.write(x + '\n'))
-        f.write(f'Output dir: {Output_Dir}\n')
+        f.write(f'Output dir: {output_dir}\n')
         f.write(f'Epochs: {Epochs}, Batch_Size: {Batch_Size}\n')
         
-        if Scheme == 'AllTrain':
+        if scheme == 'AllTrain':
             f.write(f'Activation: {Activation.name}, kl_weight: 1/{len(Training_Data_Features)}\n')
         else:
             f.write(f'Activation: {Activation.name}, kl_weight: 1/{len_train}\n')
             
         f.write(f'Optimizer: {Opt.get_config()}\n')
         f.write(f'Loss: {Model[0].loss.__name__}\n')
-        f.write(f'Input file: {Filename}\n')
-        if Scheme == 'AllTrain':
+        f.write(f'Input file: {filename}\n')
+        if scheme == 'AllTrain':
             f.write(f'Total len: {len(Dataset["Train"])}\n')
         else:
             f.write(f'Total len: {len(Dataset["Train"])+len(Dataset["Test"])}\n')
@@ -198,36 +194,34 @@ def save_model(Scheme:str, Filename:str, Dataset:dict, Training_Data_Features, T
         f.write(str(Train_Var))
 
 
-def train_model(Filename:str, Aper:str, magnitudes:list, Test_Frac:float, Bin_Size:float, Plot_Preprocessing:bool,
-                Configs:dict, Conds:list, Seed:float, correct_ext:bool, Scheme:str, Plot_Train:bool, Output_Dir:str):
+def train_model(filename:str, magnitudes:list, configs:dict, test_frac:float, seed:int, output_dir:str, scheme:str):
     
-    print(f'# Seed = {Seed}')
-    print(f'# Scheme: {Scheme}')
+    print(f'# Seed = {seed}')
+    print(f'# Scheme: {scheme}')
     
     Dataset, Training_Data_Features, Training_Data_Target, Testing_Data_Features, Train_Var, Save_IDs \
-        = config_model(Filename, Aper, magnitudes, Test_Frac, Bin_Size, Plot_Preprocessing, Configs, Conds, Seed,
-                       correct_ext, Scheme, Output_Dir)
+        = config_model(filename, magnitudes, configs, test_frac, seed, output_dir, scheme)
     
-    if Scheme == 'AllTrain':
-        Model, Model_Fit, len_train = all_train(Dataset, Training_Data_Features, Training_Data_Target, Train_Var, Seed,
-                                                Output_Dir)
+    if scheme == 'AllTrain':
+        Model, Model_Fit, len_train = all_train(Dataset, Training_Data_Features, Training_Data_Target, Train_Var, seed,
+                                                output_dir)
     
     else:
         Model, Model_Fit, len_train = kfold(Dataset, Training_Data_Features, Training_Data_Target, Testing_Data_Features,
-                                            Train_Var, Save_IDs, Seed, Plot_Train, Output_Dir)
+                                            Train_Var, Save_IDs, seed, output_dir)
 
-    save_model(Scheme, Filename, Dataset, Training_Data_Features, Train_Var, Model, len_train, Output_Dir)
+    save_model(scheme, filename, Dataset, Training_Data_Features, Train_Var, Model, len_train, output_dir)
     
     return Model, Model_Fit
         
     
-def plot_loss(Scheme:str, Output_Dir:str):
+def plot_loss(scheme:str, seed:int, output_dir:str):
     
-    model = os.path.join(Output_Dir, 'SavedModels')
+    model = os.path.join(output_dir, 'SavedModels')
     Folds = os.listdir(model)
     
-    if Scheme == 'AllTrain':
-        loss_file = pd.read_csv(os.path.join(model, Folds[0], f'Seed47_{Folds[0]}.csv'))
+    if scheme == 'AllTrain':
+        loss_file = pd.read_csv(os.path.join(model, Folds[0], f'Seed{seed}_{Folds[0]}.csv'))
         ax = plt.figure(figsize=(4, 4))
         Min_Y = np.min(loss_file['loss'])
         plt.plot(loss_file['loss'], lw=1, alpha=1)
@@ -240,7 +234,7 @@ def plot_loss(Scheme:str, Output_Dir:str):
         loss = []
         val_loss = []
         for i in range(len(Folds)):
-            loss_file = pd.read_csv(os.path.join(model, Folds[i], f'Seed47_{Folds[i]}.csv'))
+            loss_file = pd.read_csv(os.path.join(model, Folds[i], f'Seed{seed}_{Folds[i]}.csv'))
             loss.append(loss_file['loss'])
             val_loss.append(loss_file['val_loss'])
             Min_Y = np.min(loss_file['loss'])
@@ -262,4 +256,4 @@ def plot_loss(Scheme:str, Output_Dir:str):
         ax[-1].legend()
 
     plt.tight_layout()
-    plt.savefig(Output_Dir+'Loss_Comp.pdf', bbox_inches='tight')
+    plt.savefig(output_dir+'Loss_Comp.pdf', bbox_inches='tight')

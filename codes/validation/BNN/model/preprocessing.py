@@ -9,12 +9,10 @@ simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import QuantileTransformer, MinMaxScaler
 import matplotlib.pyplot as plt
-import extinction
 
-from utils_bnn import sfdmap
-from settings.paths import (match_path as data_path,
-                            bnn_path as results_path,
-                            dust_path)
+from utils.preprocessing import mag_redshift_selection, prep_wise, create_bins
+from utils.correct_extinction import correction
+from settings.paths import match_path as data_path, bnn_path as results_path
 
 
 def select_magnitudes(Aper:str, magnitudes:list, prt=True) -> tuple:
@@ -34,7 +32,7 @@ def select_magnitudes(Aper:str, magnitudes:list, prt=True) -> tuple:
         dir_list.append('Sn')
         
     if 'wise' in magnitudes:
-        Magnitudes_WISE = ['W1_MAG','W2_MAG']
+        Magnitudes_WISE = ['W1','W2']
         dir_list.append('W')
     else:
         Magnitudes_WISE = []
@@ -91,261 +89,172 @@ def calc_ratios(Dataframe, Features:list) -> list:
     return Ratios
 
 
-def create_zclass(Dataframe, Bin_Size:float):
-    zmin = np.floor(np.min(Dataframe['Z']))
-
-    zmax = np.ceil(np.max(Dataframe['Z']))
-    if zmax - np.max(Dataframe['Z']) > Bin_Size:
-        zmax = zmax - Bin_Size
-
-    bins = np.arange(zmin, zmax+Bin_Size, Bin_Size)
-    Z_class = pd.cut(Dataframe['Z'], bins=bins, labels=range(len(bins)-1))
-
-    Dataframe['Zclass'] = Z_class
-    return bins
-
-
-def split(Dataframe, Test_Frac:float, Stratify:bool, Data_Seed:float):
+def split(dataframe, test_frac:float, seed:int):
     
-    print('# Dataframe Size:', len(Dataframe))
+    print('# Dataframe Size:', len(dataframe))
     
-    if Test_Frac == 0:
-        TrainingSample = Dataframe
-        TestingSample = pd.DataFrame()
+    if test_frac == 0:
+        train_sample = dataframe
+        test_sample = pd.DataFrame()
 
     else:
+        dataframe, _, _ = create_bins(data=dataframe, bin_size=0.5, return_data=True, var='Z')
+        train_sample, test_sample = train_test_split(
+            dataframe, test_size=test_frac, stratify=dataframe['Zclass'], random_state=seed)   
         
-        if Stratify:
-            TrainingSample, TestingSample = train_test_split(
-                Dataframe, test_size=Test_Frac, stratify=Dataframe['Zclass'], random_state=Data_Seed)
-        else:
-            TrainingSample, TestingSample = train_test_split(
-                Dataframe, test_size=Test_Frac, random_state=Data_Seed)   
-        
-    print('# Train Size:    ', len(TrainingSample))
-    print('# Test Size:     ', len(TestingSample))
+    print('# Train Size:    ', len(train_sample))
+    print('# Test Size:     ', len(test_sample))
 
-    return TrainingSample, TestingSample
+    return train_sample, test_sample
 
 
-def scale_features(TrainingSample, Training_Features:list):
-    
-    Scaler_X_1 = QuantileTransformer(output_distribution='normal')
-    Scaled_Train_X = Scaler_X_1.fit_transform(TrainingSample[Training_Features])
-    Scaler_X_2 = MinMaxScaler((0,1))
-    Scaled_Train_X = Scaler_X_2.fit_transform(Scaled_Train_X)
-    Scaled_Train_X = pd.DataFrame(Scaled_Train_X, columns=Training_Features)
-        
-    return Scaler_X_1, Scaler_X_2, Scaled_Train_X
-
-
-def plot_features(Training_Features:list, Scaled_Train_X):
+def plot_features(feature_list:list, scaled_train, output_dir:str):
     
     fig, _ = plt.subplots(figsize=(20, 20))
     plt.subplots_adjust(hspace=0.5, wspace=0.5)
-    Features_to_plot = Training_Features
+    features_to_plot = feature_list
 
     plt_idx = 1
-    for feature in Features_to_plot:
+    for feature in features_to_plot:
         plt.subplot(10, 6, plt_idx)
-        plt.hist(Scaled_Train_X[feature], lw=2, range=(0, 1), bins=20, histtype='step')
+        plt.hist(scaled_train[feature], lw=2, bins=20, histtype='step')
         plt.yscale('log')
         plt.xlabel(feature)
         plt.grid(lw=.5)
-        plt_idx = plt_idx+1
+        plt_idx += 1
 
     fig.tight_layout()
-    plt.show()
+    plt.savefig(os.path.join(output_dir, 'features.png'), bbox_inches='tight')
+    plt.close()
 
 
-def plot_split(Dataframe, TrainingSample, TestingSample, bins):
-    
-    plt.figure(figsize=(10, 8))
-    plt.hist(Dataframe['Z'], bins=bins, label='all')
-    plt.hist(TrainingSample['Z'], bins=bins, label='train sample')
-    plt.hist(TestingSample['Z'], bins=bins, label='test sample')
-    plt.legend()
-    plt.tight_layout()
-    plt.show()
-
-
-def Correct_Extinction(Dataframe, magnitudes:list, Aper:str, Extinction_Maps=None):
-    '''
-    Correct the magnitudes for extinction using the CCM89 Law
-
-    Keyword arguments:
-    Dataframe         -- Dataframe containing the data to be corrected
-    Extinction_Maps   -- SFD Maps
-    '''
-    print('# Correcting magnitudes for extinction...')
-    Corrected_Dataframe = Dataframe.copy().reset_index(drop=True)
-    
-    Magnitudes_SPLUS, Magnitudes_WISE, Magnitudes_GALEX, _, _ = select_magnitudes(Aper, magnitudes, prt=False)
-    Magnitudes = Magnitudes_GALEX + Magnitudes_SPLUS + Magnitudes_WISE
-    
-    if not Extinction_Maps:
-        Extinction_Maps = sfdmap.SFDMap(dust_path)
-
-    # Obtaining E(B-V) and Av in a given RA, DEC position
-    AV = Extinction_Maps.ebv(Dataframe['RA'], Dataframe['DEC'])*3.1
-
-    # Calculating the extinction on the S-PLUS bands using the Cardelli, Clayton & Mathis law.
-    lambdas_dict = {'FUVmag': 1549.02, 'NUVmag': 2304.74,
-                    'u_PStotal': 3536, 'J0378_PStotal': 3770, 'J0395_PStotal': 3940, 'J0410_PStotal': 4094,
-                    'J0430_PStotal': 4292, 'g_PStotal': 4751, 'J0515_PStotal': 5133, 'r_PStotal': 6258,
-                    'J0660_PStotal': 6614, 'i_PStotal': 7690, 'J0861_PStotal': 8611, 'z_PStotal': 8831,
-                    'W1_MAG': 33526, 'W2_MAG': 46028}
-    lambdas = []
-    for name, lamb in lambdas_dict.items():
-        if name in Magnitudes:
-            lambdas.append(lamb)
-    lambdas = np.array(lambdas, dtype=float)
-
-    Extinctions = []
-    for i in range(len(AV)):
-        Extinctions.append(extinction.ccm89(lambdas, AV[i], 3.1))
-
-    Extinction_DF = pd.DataFrame(Extinctions, columns=Magnitudes)
-    Corrected_Dataframe[Magnitudes] = Corrected_Dataframe[Magnitudes].sub(Extinction_DF)
-
-    return Corrected_Dataframe
-
-
-def Process_Split(Filename:str, Aper:str, magnitudes:list, Test_Frac:float, Bin_Size:float, Plot:int, Configs:dict,
-                  Conds:list, Seed:float, correct_ext:bool, Output_Dir:str, save_df:bool):
+def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:int, output_dir:str,
+                  aper='PStotal', save_df=True):
     pd.options.mode.chained_assignment = None  # default='warn'
     
-    if 'broad' in magnitudes and 'narrow' in magnitudes:
+    if 'broad' in mags and 'narrow' in mags:
         splus = ['u', 'J0378', 'J0395', 'J0410', 'J0430', 'g', 'J0515', 'r', 'J0660', 'i', 'J0861', 'z']
-    elif 'broad' in magnitudes:
+    elif 'broad' in mags:
         splus = ['u', 'g', 'r', 'i', 'z']
-    elif 'narrow' in magnitudes:
+    elif 'narrow' in mags:
         splus = ['J0378', 'J0395', 'J0410', 'J0430', 'J0515', 'J0660', 'J0861']
-    Magnitudes_WISE = ['W1_MAG','W2_MAG'] if 'wise' in magnitudes else []
-    Magnitudes_GALEX = ['FUVmag', 'NUVmag'] if 'galex' in magnitudes else []
+    Magnitudes_WISE = ['W1_MAG','W2_MAG'] if 'wise' in mags else []
+    Magnitudes_GALEX = ['FUVmag', 'NUVmag'] if 'galex' in mags else []
 
-    Base_Columns = ['ID', 'RA', 'DEC', 'PhotoFlagDet', 'nDet_'+Aper]
-    Magnitudes_SPLUS = [item+'_'+Aper for item in splus]
+    Base_Columns = ['ID', 'RA_1', 'DEC_1']
+    Magnitudes_SPLUS = [item+'_'+aper for item in splus]
     Errors_SPLUS = ['e_'+item for item in Magnitudes_SPLUS]
-    Magnitudes = Magnitudes_GALEX + Magnitudes_SPLUS + Magnitudes_WISE  # It's important to keep this order
+    magnitudes = Magnitudes_GALEX + Magnitudes_SPLUS + Magnitudes_WISE  # It's important to keep this order
     
-    File_path = os.path.join(data_path, Filename)
-    cols = Base_Columns+Magnitudes+Errors_SPLUS+['Z']
-    if 'broad' not in magnitudes:
-        cols.append('r_'+Aper)
-    Dataframe = pd.read_csv(File_path, usecols=cols)
+    file_path = os.path.join(data_path, filename)
+    cols = Base_Columns + magnitudes + Errors_SPLUS + ['Z']
+    if 'broad' not in mags:
+        cols.append('r_'+aper)
+    data = pd.read_csv(file_path, usecols=cols)
     
-    for C in Conds:
-        Dataframe = Dataframe.query(C)
+    data = mag_redshift_selection(data, rmax=22, zmax=7)  # cuts
+    #data = prep_wise(data)  # wise flux to magnitude
 
-    # Non detected/observed objects
-    for feature in Magnitudes:
-        Dataframe[feature][~Dataframe[feature].between(10, 50)] = np.nan
+    # Non detected/observed objects (splus 99 and unwise -1)
+    for mag in magnitudes:
+        data[mag][~data[mag].between(10, 50)] = np.nan
     
-    if correct_ext:
-        Dataframe = Correct_Extinction(Dataframe, magnitudes, Aper)
+    # Extinction correction
+    data = correction(data)
 
     # Replace S-PLUS missing features with the upper magnitude limit (the value in the error column)
-    for feature, error in zip(Magnitudes_SPLUS, Errors_SPLUS):
-        Dataframe[feature].fillna(Dataframe[error], inplace=True)
+    for mag, error in zip(Magnitudes_SPLUS, Errors_SPLUS):
+        data[mag].fillna(data[error], inplace=True)
     
-    Training_Features = []
+    feature_list = []
     
-    if Configs['mag']:
-        Training_Features += Magnitudes
+    if configs['mag']:
+        feature_list += magnitudes
 
-    if Configs['col']:
+    if configs['col']:
 
-        if 'broad' not in magnitudes:
+        if 'broad' not in mags:
             # Inserting r band in the correct position only to calculate colors
-            j0660_idx = Magnitudes.index('J0660_'+Aper)
-            Colors_Magnitudes = Magnitudes[:j0660_idx] + ['r_'+Aper] + Magnitudes[j0660_idx:]
+            j0660_idx = magnitudes.index('J0660_'+aper)
+            colors_magnitudes = magnitudes[:j0660_idx] + ['r_'+aper] + magnitudes[j0660_idx:]
         else:
-            Colors_Magnitudes = Magnitudes
+            colors_magnitudes = magnitudes
         
-        Colors = calc_colors(Dataframe, Aper, Colors_Magnitudes)
-        Training_Features += Colors
+        Colors = calc_colors(data, aper, colors_magnitudes)
+        feature_list += Colors
     
-    if Configs['rat']:
-        Ratios = calc_ratios(Dataframe, Magnitudes)
-        Training_Features += Ratios
+    if configs['rat']:
+        Ratios = calc_ratios(data, magnitudes)
+        feature_list += Ratios
     
-    print(f'# {len(Training_Features)} Features:\n{Training_Features}')
+    print(f'# {len(feature_list)} Features:\n{feature_list}')
     
-    if Bin_Size:
-        Bins = create_zclass(Dataframe, Bin_Size)
-    else:
-        Bins = np.arange(0, np.max(Dataframe['Z'])+0.25, 0.25)
-    TrainingSample, TestingSample = split(Dataframe, Test_Frac, Bin_Size, Seed)
-    TrainingSample['weights'] = 1
+    train_sample, test_sample = split(data, test_frac, seed)
+    train_sample['weights'] = 1
     
-    if save_df: Dataframe.to_csv(os.path.join(Output_Dir, 'Dataframe.csv'), index=False)
+    if save_df: data.to_csv(os.path.join(output_dir, 'dataframe.csv'), index=False)
     
-    Scaler_X_1, Scaler_X_2, Scaled_Train_X = scale_features(TrainingSample, Training_Features)
+    scaler_1 = QuantileTransformer(output_distribution='normal')
+    scaler_2 = MinMaxScaler((0, 1))
+    scaled_train = scaler_1.fit_transform(train_sample[feature_list])
+    scaled_train = scaler_2.fit_transform(scaled_train)
+    scaled_train = pd.DataFrame(scaled_train, columns=feature_list)
+    plot_features(feature_list, scaled_train, output_dir)
     
-    TrainingMask = TrainingSample[Training_Features].isna().reset_index(drop=True)
-    if Test_Frac != 0:
-        TestingMask  = TestingSample[Training_Features].isna().reset_index(drop=True)
-
-    if Plot == 1:
-        plot_features(Training_Features, Scaled_Train_X)
-    elif Plot == 2:
-        plot_split(Dataframe, TrainingSample, TestingSample, Bins)
-    elif Plot == 3:
-        plot_features(Training_Features, Scaled_Train_X)
-        plot_split(Dataframe, TrainingSample, TestingSample, Bins)
+    train_mask = train_sample[feature_list].isna().reset_index(drop=True)
         
-    if Test_Frac != 0:
-        return TrainingSample, TestingSample, Training_Features, \
-            Scaler_X_1, Scaler_X_2, TrainingMask, TestingMask
+    if test_frac != 0:
+        test_mask = test_sample[feature_list].isna().reset_index(drop=True)
+        return train_sample, test_sample, feature_list, scaler_1, scaler_2, train_mask, test_mask
     
-    if Test_Frac == 0:
-        return TrainingSample, Training_Features, Scaler_X_1, Scaler_X_2, TrainingMask
+    if test_frac == 0:
+        return train_sample, feature_list, scaler_1, scaler_2, train_mask
 
 
-def Process_Final(Dataframe, Aper:str, magnitudes:list, Configs:dict):
+def Process_Final(dataframe, mags:list, configs:dict, aper='PStotal'):
+    '''CHECK LATER'''
     
-    if 'broad' in magnitudes and 'narrow' in magnitudes:
+    if 'broad' in mags and 'narrow' in mags:
         splus = ['u', 'J0378', 'J0395', 'J0410', 'J0430', 'g', 'J0515', 'r', 'J0660', 'i', 'J0861', 'z']
-    elif 'broad' in magnitudes:
+    elif 'broad' in mags:
         splus = ['u', 'g', 'r', 'i', 'z']
-    elif 'narrow' in magnitudes:
+    elif 'narrow' in mags:
         splus = ['J0378', 'J0395', 'J0410', 'J0430', 'J0515', 'J0660', 'J0861']
-    Magnitudes_WISE = ['W1_MAG','W2_MAG'] if 'wise' in magnitudes else []
-    Magnitudes_GALEX = ['FUVmag', 'NUVmag'] if 'galex' in magnitudes else []
+    Magnitudes_WISE = ['W1_MAG','W2_MAG'] if 'wise' in mags else []
+    Magnitudes_GALEX = ['FUVmag', 'NUVmag'] if 'galex' in mags else []
 
-    Magnitudes_SPLUS = [item+'_'+Aper for item in splus]
+    Magnitudes_SPLUS = [item+'_'+aper for item in splus]
     Errors_SPLUS = ['e_'+item for item in Magnitudes_SPLUS]
-    Magnitudes = Magnitudes_GALEX + Magnitudes_SPLUS + Magnitudes_WISE  # It's important to keep this order
+    magnitudes = Magnitudes_GALEX + Magnitudes_SPLUS + Magnitudes_WISE  # It's important to keep this order
     
     # Non detected/observed objects
-    for feature in Magnitudes:
-        Dataframe[feature][~Dataframe[feature].between(10, 50)] = np.nan
+    for mag in magnitudes:
+        dataframe[mag][~dataframe[mag].between(10, 50)] = np.nan
 
     # Replace S-PLUS missing features with the upper magnitude limit (the value in the error column)
-    for feature, error in zip(Magnitudes_SPLUS, Errors_SPLUS):
-        Dataframe[feature].fillna(Dataframe[error], inplace=True)
+    for mag, error in zip(Magnitudes_SPLUS, Errors_SPLUS):
+        dataframe[mag].fillna(dataframe[error], inplace=True)
     
-    Training_Features = []
+    feature_list = []
     
-    if Configs['mag']:
-        Training_Features += Magnitudes
+    if configs['mag']:
+        feature_list += magnitudes
 
-    if Configs['col']:
-        if 'broad' not in magnitudes:
+    if configs['col']:
+        if 'broad' not in mags:
             # Inserting r band in the correct position only to calculate colors
-            j0660_idx = Magnitudes.index('J0660_'+Aper)
-            Colors_Magnitudes = Magnitudes[:j0660_idx] + ['r_'+Aper] + Magnitudes[j0660_idx:]
+            j0660_idx = magnitudes.index('J0660_'+aper)
+            colors_magnitudes = magnitudes[:j0660_idx] + ['r_'+aper] + magnitudes[j0660_idx:]
         else:
-            Colors_Magnitudes = Magnitudes
-        Colors = calc_colors(Dataframe, Aper, Colors_Magnitudes)
-        Training_Features += Colors
+            colors_magnitudes = magnitudes
+        Colors = calc_colors(dataframe, aper, colors_magnitudes)
+        feature_list += Colors
     
-    if Configs['rat']:
-        Ratios = calc_ratios(Dataframe, Magnitudes)
-        Training_Features += Ratios
+    if configs['rat']:
+        Ratios = calc_ratios(dataframe, magnitudes)
+        feature_list += Ratios
     
     # Mask
-    Mask = Dataframe[Training_Features].isna().reset_index(drop=True)
+    mask = dataframe[feature_list].isna().reset_index(drop=True)
 
-    return Dataframe, Training_Features, Mask
+    return dataframe, feature_list, mask
