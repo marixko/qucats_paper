@@ -6,8 +6,8 @@ from tqdm import tqdm
 import joblib
 
 from utils.correct_extinction import correction
-from model.preprocessing import Process_Final
-from model.sampling import FinalPredict
+from misc.preprocessing import Process_Final
+from misc.sampling import FinalPredict
 
 def PredictForFileNoTry(files_list:list, magnitudes:list, configs:dict, folders:dict):
     '''CHECK LATER'''

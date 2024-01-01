@@ -17,11 +17,11 @@ if str(aux) not in sys.path:
     sys.path.append(aux)
 
 from settings.paths import bnn_path as results_path
-from model.loading import load
-from model.training import train_model, plot_loss
-from model.sampling import sampling
-from model.final_prediction import PredictForFileNoTry
-from visualization.plots import Benchmarks
+from misc.loading import load
+from misc.training import train_model, plot_loss
+from misc.sampling import sampling
+from misc.final_prediction import PredictForFileNoTry
+from misc.plots import Benchmarks
 
 
 data = 'iDR3n4_DR16Q_GALEX2_unWISE2-ren.csv'

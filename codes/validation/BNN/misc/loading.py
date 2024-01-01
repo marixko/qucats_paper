@@ -6,7 +6,7 @@ from tqdm import tqdm
 import tensorflow as tf
 import joblib
 
-from model.preprocessing import Process_Split
+from misc.preprocessing import Process_Split
 
 
 def load(filename:str, magnitudes:list, configs:dict, test_frac:float, seed:int, input_dir:str, load_samples=True):

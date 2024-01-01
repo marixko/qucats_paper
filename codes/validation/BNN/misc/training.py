@@ -10,8 +10,8 @@ callbacks = tf.keras.callbacks
 from tqdm.keras import TqdmCallback
 import joblib
 
-from model.preprocessing import Process_Split
-from model.network import Dense_Variational, Epochs, Batch_Size, Activation, Opt
+from misc.preprocessing import Process_Split
+from misc.network import Dense_Variational, Epochs, Batch_Size, Activation, Opt
 
 
 def config_model(filename:str, magnitudes:list, configs:dict, test_frac:float, seed:int, output_dir:str, scheme:str):
