@@ -6,7 +6,7 @@ from tqdm import tqdm
 from scipy import integrate
 import tensorflow_probability as tfp; tfd = tfp.distributions
 
-from utils_bnn.metrics_bnn import Odds, PIT, CRPS, HPDCI, Q
+from utils.metrics import Odds, PIT, CRPS, HPDCI, Q
 
 
 def Calc_PDF(x, Weights, Means, STDs):
