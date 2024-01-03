@@ -12,6 +12,8 @@ import matplotlib.pyplot as plt
 
 from utils.preprocessing import mag_redshift_selection, prep_wise, create_bins
 from utils.correct_extinction import correction
+from settings.columns import (specz, broad, narrow, splus, wise, galex,
+                              list_feat, create_colors, calculate_colors, create_ratio, calculate_ratio)
 from settings.paths import match_path as data_path, bnn_path as results_path
 
 
@@ -128,7 +130,7 @@ def plot_features(feature_list:list, scaled_train, output_dir:str):
     plt.close()
 
 
-def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:int, output_dir:str,
+def Process_Split_old(filename:str, mags:list, configs:dict, test_frac:float, seed:int, output_dir:str,
                   aper='PStotal', save_df=True):
     pd.options.mode.chained_assignment = None  # default='warn'
     
@@ -201,6 +203,102 @@ def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:i
     scaled_train = pd.DataFrame(scaled_train, columns=feature_list)
     plot_features(feature_list, scaled_train, output_dir)
     
+    train_mask = train_sample[feature_list].isna().reset_index(drop=True)
+        
+    if test_frac != 0:
+        test_mask = test_sample[feature_list].isna().reset_index(drop=True)
+        return train_sample, test_sample, feature_list, scaler_1, scaler_2, train_mask, test_mask
+    
+    if test_frac == 0:
+        return train_sample, feature_list, scaler_1, scaler_2, train_mask
+
+
+def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:int, output_dir:str,
+                  aper='PStotal', save_df=True):
+    pd.options.mode.chained_assignment = None  # default='warn'
+    
+    # List with magnitude names    
+    magnitudes = []
+    broad_bool, narrow_bool, wise_bool, galex_bool = False, False, False, False
+    
+    if 'broad' in mags and 'narrow' in mags:
+        broad_bool, narrow_bool = True, True
+        magnitudes.extend(splus)
+    elif 'broad' in mags:
+        broad_bool = True
+        magnitudes.extend(broad)
+    elif 'narrow' in mags:
+        narrow_bool = True
+        magnitudes.extend(narrow)
+    magnitudes_splus = magnitudes.copy()
+    if 'wise' in mags:
+        wise_bool = True
+        magnitudes.extend(wise)
+    if 'galex' in mags:
+        galex_bool = True
+        magnitudes.extend(galex)
+    
+    base_columns = ['ID', 'RA_1', 'DEC_1']
+    errors_splus = ['e_'+item for item in magnitudes_splus]
+    magnitudes_r = magnitudes
+    if 'broad' not in mags:
+        magnitudes_r += ['r_'+aper]
+    
+    # Reading data
+    file_path = os.path.join(data_path, filename)
+    cols = base_columns + magnitudes_r + errors_splus + [specz]
+    data = pd.read_csv(file_path, usecols=cols)
+    
+    # Preparing data
+    data = mag_redshift_selection(data, rmax=22, zmax=7)  # cuts
+    #data = prep_wise(data)  # wise flux to magnitude
+
+    # Non detected/observed objects (splus 99 and unwise -1)
+    for mag in magnitudes:
+        data[mag][~data[mag].between(10, 50)] = np.nan
+    
+    # Extinction correction
+    data = correction(data, magnitudes_r)
+
+    # Replace S-PLUS missing features with the upper magnitude limit (the value in the error column)
+    for mag, error in zip(magnitudes_splus, errors_splus):
+        data[mag].fillna(data[error], inplace=True)
+    
+    # Defining features    
+    feature_list = []
+    
+    if configs['mag']:
+        feature_list += magnitudes
+
+    if configs['col']:
+        feature_list += create_colors(broad_bool, narrow_bool, wise_bool, galex_bool, aper)
+        data = calculate_colors(data, broad_bool, narrow_bool, wise_bool, galex_bool, aper)
+        
+    if configs['rat']:
+        feature_list += create_ratio(broad_bool, narrow_bool, wise_bool, galex_bool, aper)
+        data = calculate_ratio(data, broad_bool, narrow_bool, wise_bool, galex_bool, aper)
+    
+    feature_list = ['FUVmag-r_PStotal', 'NUVmag-r_PStotal', 'u_PStotal-r_PStotal', 'J0378_PStotal-r_PStotal',
+                    'J0395_PStotal-r_PStotal', 'J0410_PStotal-r_PStotal', 'J0430_PStotal-r_PStotal',
+                    'g_PStotal-r_PStotal', 'J0515_PStotal-r_PStotal', 'r_PStotal-J0660_PStotal', 'r_PStotal-i_PStotal',
+                    'r_PStotal-J0861_PStotal', 'r_PStotal-z_PStotal', 'r_PStotal-W1_MAG', 'r_PStotal-W2_MAG']
+    print(f'# {len(feature_list)} Features:\n{feature_list}')
+    
+    # Splitting sample
+    train_sample, test_sample = split(data, test_frac, seed)
+    train_sample['weights'] = 1
+    
+    if save_df: data.to_csv(os.path.join(output_dir, 'dataframe.csv'), index=False)
+    
+    # Fitting scalars    
+    scaler_1 = QuantileTransformer(output_distribution='normal')
+    scaler_2 = MinMaxScaler((0, 1))
+    scaled_train = scaler_1.fit_transform(train_sample[feature_list])
+    scaled_train = scaler_2.fit_transform(scaled_train)
+    scaled_train = pd.DataFrame(scaled_train, columns=feature_list)
+    plot_features(feature_list, scaled_train, output_dir)
+    
+    # Missing band mask
     train_mask = train_sample[feature_list].isna().reset_index(drop=True)
         
     if test_frac != 0:

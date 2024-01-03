@@ -35,7 +35,7 @@ configs = {'mag': False, 'col': True, 'rat': False}
 aperture = 'PStotal'
 final_predict_path = ''  # CHECK LATER
 
-obs = '_preptest8'
+obs = '_feat_order_2'
 if scheme == 'KFold':
     test_frac = 0.25
     model_path = os.path.join(results_path, f'crossval_model{obs}', '')
@@ -70,7 +70,8 @@ if train:
     print(f'Training ({scheme})')
     Model, Model_Fit = train_model(filename=data, magnitudes=mags, configs=configs, test_frac=test_frac,
                                    seed=model_seed, output_dir=model_path, scheme=scheme)
-    plot_loss(scheme, model_seed, model_path)
+    try: plot_loss(scheme, model_seed, model_path)
+    except Exception as erro: print(erro)
 
 if predict:
     print(f'Loading + sampling')
