@@ -5,10 +5,12 @@ import numpy as np
 from settings.columns import splus, wise, galex
 from settings.paths import dust_path
 
-def correction(data):
+def correction(data, feat=[]):
     chunk = data.copy(deep=True)
 
-    feat = galex + splus + wise
+    if not feat:
+        feat = galex + splus + wise
+
     m = sfdmap.SFDMap(dust_path)
     EBV = m.ebv(chunk.RA_1, chunk.DEC_1)
 
@@ -17,9 +19,6 @@ def correction(data):
 
     # Calculando a extinção em outros comprimentos de onda
     # Utilizando a lei de extinção de Cardelli, Clayton & Mathis.
-    # lambdas = np.array([1549.02, 2304.74,                                                        # FUV, NUV
-    #                     3536, 3770, 3940, 4094, 4292, 4751, 5133, 6258, 6614, 7690, 8611, 8831,  
-    #                     33526.00, 46028.00])
     
     lambdas_dict = {'FUVmag': 1549.02, 'NUVmag': 2304.74,
                     'u_PStotal': 3536, 'J0378_PStotal': 3770, 'J0395_PStotal': 3940, 'J0410_PStotal': 4094,
@@ -41,7 +40,7 @@ def correction(data):
 
     mask_99 = chunk[feat]==99
     chunk[feat] = chunk[feat].sub(Extinction_DF)
-    chunk[feat] = chunk[feat].mask(mask_99, other = 99)
+    chunk[feat] = chunk[feat].mask(mask_99, other=99)
     chunk.index = data.index
     return chunk
 
