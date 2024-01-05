@@ -6,7 +6,7 @@ import pandas as pd
 from settings.columns import wise, galex, splus, aper
 
 
-pd.set_option('mode.chained_assignment', None)
+pd.set_option('mode.chained_assignment',  None)
 
 
 def mag_redshift_selection(dataframe:pd.core.frame.DataFrame, rmax="None", rmin="None", zmax="None", zmin="None"):
@@ -46,7 +46,6 @@ def flag_observation(dataframe:pd.core.frame.DataFrame):
     df.loc[df["objID_x"].isna(),"flag_WISE"] = 1
 
     return df
-
 
 def missing_input(dataframe:pd.core.frame.DataFrame, input_value=99):
     df = dataframe.copy()
