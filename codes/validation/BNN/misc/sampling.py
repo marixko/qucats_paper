@@ -6,6 +6,7 @@ from tqdm import tqdm
 from scipy import integrate
 import tensorflow_probability as tfp; tfd = tfp.distributions
 
+from settings.columns import aper
 from utils.metrics import Odds, PIT, CRPS, HPDCI, Q
 
 
@@ -19,7 +20,7 @@ def Calc_PDF(x, Weights, Means, STDs):
     return PDF/np.trapz(PDF, x)
 
 
-def sampling(Model:dict, Testing_Dataframe:dict, Testing_Data_Features, Num_Samples=200, Output_PDFs=True, aper='PStotal'):
+def sampling(Model:dict, Testing_Dataframe:dict, Testing_Data_Features, Num_Samples=200, Output_PDFs=True, aper=aper):
 
     Folds = Model.keys()
     print(f"# Predicting for {len(Folds)} folds")
