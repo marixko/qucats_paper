@@ -10,9 +10,9 @@ from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import QuantileTransformer, MinMaxScaler
 import matplotlib.pyplot as plt
 
-from utils.preprocessing import mag_redshift_selection, prep_wise, create_bins
+from utils.preprocessing import mag_redshift_selection, prep_wise, flag_observation, create_bins
 from utils.correct_extinction import correction
-from settings.columns import (specz, broad, narrow, splus, error_splus, wise_flux, wise, galex,
+from settings.columns import (aper, specz, broad, narrow, splus, error_splus, wise_flux, wise, galex,
                               create_colors, calculate_colors, create_ratio, calculate_ratio)
 from settings.paths import match_path as data_path
 
@@ -58,19 +58,23 @@ def plot_features(feature_list:list, scaled_train, output_dir:str, save_stuff:bo
 
 
 def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:int, output_dir:str,
-                  aper='PStotal', save_stuff=True):
+                  aper=aper, save_stuff=True):
     pd.options.mode.chained_assignment = None  # default='warn'
+    
+    flag_obs = True
     
     # Reading data
     file_path = os.path.join(data_path, filename)
     base_columns = ['ID', 'RA_1', 'DEC_1']
-    cols = base_columns + splus + error_splus + wise_flux + galex + [specz]
+    flag_columns = ['name', 'objID_x'] if flag_obs else []
+    cols = base_columns + flag_columns + splus + error_splus + wise_flux + galex + [specz]
     data = pd.read_csv(file_path, usecols=cols)
     
     # Preparing data
     data = mag_redshift_selection(data, rmax=22, zmax=5)  # sample cuts
     data = prep_wise(data)  # wise flux to magnitude
     data = correction(data)  # extinction correction
+    if flag_obs: data = flag_observation(data).drop(columns=flag_columns)  # WISE & GALEX observation flag
     
     # Replace S-PLUS missing features with the upper magnitude limit (the value in the error column)
     for mag, error in zip(splus, error_splus):
@@ -112,6 +116,9 @@ def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:i
     if configs['rat']:
         feature_list += create_ratio(broad_bool, narrow_bool, wise_bool, galex_bool, aper)
         data = calculate_ratio(data, broad_bool, narrow_bool, wise_bool, galex_bool, aper)
+    
+    if flag_obs:
+        feature_list += ['flag_WISE', 'flag_GALEX']
     
     print(f'# {len(feature_list)} Features:\n{feature_list}')
     
