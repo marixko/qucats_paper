@@ -24,18 +24,18 @@ from misc.final_prediction import PredictForFileNoTry
 from misc.plots import Benchmarks
 
 
-data = 'iDR3n4_DR16Q_GALEX2_unWISE2-ren.csv'
+data = 'STRIPE82_DR4_DR16Q1a_unWISE2a_GALEXDR672a.csv'
 model_seed = 47
 scheme = 'KFold'
 train = True
 predict = True
 
-mags = ['broad', 'narrow', 'wise', 'galex']
+mags = ['broad', 'wise', 'galex']
 configs = {'mag': False, 'col': True, 'rat': False}
 aperture = 'PStotal'
 final_predict_path = ''  # CHECK LATER
 
-obs = '_feat_order_2'
+obs = '_dr4_BWG_noflag'
 if scheme == 'KFold':
     test_frac = 0.25
     model_path = os.path.join(results_path, f'crossval_model{obs}', '')
