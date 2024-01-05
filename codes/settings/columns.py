@@ -10,7 +10,7 @@ broad = [item+'_'+aper for item in feat_broad]
 feat_narrow = ['J0378', 'J0395', 'J0410', 'J0430', 'J0515', 'J0660', 'J0861']
 narrow = [item+'_'+aper for item in feat_narrow]
 splus = broad + narrow
-wise = ['W1_MAG', 'W2_MAG']
+wise = ['W1', 'W2']
 galex = ['FUVmag', 'NUVmag']
 
 error_splus = ['e_'+item for item in splus]
@@ -44,8 +44,8 @@ def create_features(aper):
                           'narrow': None},
                 'galex': None}
 
-    features['wise'] = {'W1_MAG': 34000,
-                        'W2_MAG': 46000}
+    features['wise'] = {'W1': 34000,
+                        'W2': 46000}
 
     features['galex'] = {'FUVmag': 1528,
                          'NUVmag': 2310}
