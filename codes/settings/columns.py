@@ -10,6 +10,7 @@ broad = [item+'_'+aper for item in feat_broad]
 feat_narrow = ['J0378', 'J0395', 'J0410', 'J0430', 'J0515', 'J0660', 'J0861']
 narrow = [item+'_'+aper for item in feat_narrow]
 splus = broad + narrow
+wise_flux = ['FW1', 'FW2']
 wise = ['W1', 'W2']
 galex = ['FUVmag', 'NUVmag']
 
