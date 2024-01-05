@@ -8,7 +8,7 @@ from settings.paths import dust_path
 def correction(data, feat=[]):
     chunk = data.copy(deep=True)
 
-    if not feat:
+    if not bool([]):
         feat = galex + splus + wise
 
     m = sfdmap.SFDMap(dust_path)
