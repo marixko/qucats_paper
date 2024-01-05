@@ -9,7 +9,7 @@ from settings.columns import wise, galex, splus, aper
 pd.set_option('mode.chained_assignment',  None)
 
 
-def mag_redshift_selection(dataframe:pd.core.frame.DataFrame, rmax="None", rmin="None", zmax="None", zmin="None"):
+def mag_redshift_selection(dataframe:pd.DataFrame, rmax="None", rmin="None", zmax="None", zmin="None"):
     df = dataframe.copy()
     
     if rmax !=  "None":
@@ -27,7 +27,7 @@ def mag_redshift_selection(dataframe:pd.core.frame.DataFrame, rmax="None", rmin=
     return df
 
 
-def prep_wise(dataframe:pd.core.frame.DataFrame):
+def prep_wise(dataframe:pd.DataFrame):
     df = dataframe.copy()
     df["FW1"] = df["FW1"].replace(0, np.nan)
     df["FW2"] = df["FW2"].replace(0, np.nan)
@@ -36,7 +36,7 @@ def prep_wise(dataframe:pd.core.frame.DataFrame):
     return df
 
 
-def flag_observation(dataframe:pd.core.frame.DataFrame):
+def flag_observation(dataframe:pd.DataFrame):
     df = dataframe.copy()
 
     df["flag_GALEX"] = 0
@@ -47,7 +47,8 @@ def flag_observation(dataframe:pd.core.frame.DataFrame):
 
     return df
 
-def missing_input(dataframe:pd.core.frame.DataFrame, input_value=99):
+
+def missing_input(dataframe:pd.DataFrame, input_value=99):
     df = dataframe.copy()
     df[wise+galex] = df[wise+galex].fillna(value=input_value)
     if input_value != 99:
@@ -56,7 +57,7 @@ def missing_input(dataframe:pd.core.frame.DataFrame, input_value=99):
     return df
 
 
-def prep_data(dataframe:pd.core.frame.DataFrame, aper:str, rmax="None", rmin="None", zmax="None", zmin="None", val_mb="None"):
+def prep_data(dataframe:pd.DataFrame, aper:str, rmax="None", rmin="None", zmax="None", zmin="None", val_mb="None"):
     warnings.warn(
         "This function is deprecated. Use mag_redshift_selection() and missing_input() instead for the reviewed version.",
         DeprecationWarning)
@@ -88,7 +89,7 @@ def prep_data(dataframe:pd.core.frame.DataFrame, aper:str, rmax="None", rmin="No
     return df
 
 
-def create_bins(data:pd.core.frame.DataFrame|pd.core.frame.Series, return_data=False, var="Z", bin_size=0.5, bins="None"):
+def create_bins(data, return_data=False, var="Z", bin_size=0.5, bins="None"):
 
     if bins == "None":
         xmin = np.floor(np.min(data[var]))
@@ -114,7 +115,7 @@ def create_bins(data:pd.core.frame.DataFrame|pd.core.frame.Series, return_data=F
         return bins, itv
 
 
-def rename_aper(data:pd.core.frame.DataFrame):
+def rename_aper(data:pd.DataFrame):
     list_aper = ['iso','aper_3', 'aper_6', 'PStotal', 'auto', 'petro']
     for aper in list_aper:
         data.rename(columns={"PhotoFlag_R": "PhotoFlag_r",
