@@ -24,7 +24,7 @@ def sampling(Model:dict, Testing_Dataframe:dict, Testing_Data_Features, Num_Samp
 
     Folds = Model.keys()
     print(f"# Predicting for {len(Folds)} folds")
-    x = np.linspace(0, 7, 7000, endpoint=True)
+    x = np.linspace(0, 5, 5000, endpoint=True)
     
     Testing_Data_Target = Testing_Dataframe['Test']['Z'].values
     Result_DF = pd.DataFrame()
