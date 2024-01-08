@@ -65,7 +65,7 @@ def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:i
     
     # Reading data
     file_path = os.path.join(data_path, filename)
-    base_columns = ['ID', 'RA_1', 'DEC_1']
+    base_columns = ['ID', 'RA_1', 'DEC_1', 'SDSS_NAME']
     flag_columns = ['name', 'objID_x'] if flag_obs else []
     cols = base_columns + flag_columns + splus + error_splus + wise_flux + galex + [specz]
     data = pd.read_csv(file_path, usecols=cols)
