@@ -402,11 +402,12 @@ def Average_Z_PDFs(Results_DF, Train_DF, PDF_List, x, Z_Lim:float, Output_Dir:st
 
 
 def PDF_Sample(Results_DF, PDFs_Dict:dict, x, Aper:str, Seed:int, Output_Dir:str,
-               DarkMode=False, Save=True, Show=False, Close=True):
+               DarkMode=False, Save=True, Show=False, Close=True, idxs=None):
     
     r_conds = [f'r_{Aper} < 20', f'20 < r_{Aper} < 21.3', f'r_{Aper} > 21.3']
-    z_conds = ['z < 0.5', '0.5 < z < 3.5', '3.5 < z < 5', 'z > 5']
-    idxs = random_index(Results_DF, Aper, r_conds, z_conds, Seed)
+    z_conds = ['z < 0.5', '0.5 < z < 3.5', '3.5 < z < 5']
+    if idxs is None:
+        idxs = random_index(Results_DF, Aper, r_conds, z_conds, Seed)
     n_r = idxs.shape[0]
     n_z = idxs.shape[1]
     
@@ -417,16 +418,23 @@ def PDF_Sample(Results_DF, PDFs_Dict:dict, x, Aper:str, Seed:int, Output_Dir:str
             ax = axes[i][j]
             idx = idxs[i][j]
             
-            ra = round(Results_DF.loc[idx, 'RA'], 2)
-            dec = round(Results_DF.loc[idx, 'DEC'], 3)
-            ax.plot([], label=f'RA: {ra}\nDec: {dec}')
-            ax.legend(handlelength=0, handletextpad=0)
+            try:
+                name = Results_DF.loc[idx, 'SDSS_NAME']
+                ax.plot([], label=f'SDSS J{name}')
+                leg = ax.legend(loc='upper right', fontsize=10,
+                                handlelength=0, handletextpad=0, borderpad=0.1, framealpha=0.7)
+                leg.get_frame().set_linewidth(0.5)
+            except:
+                ra = round(Results_DF.loc[idx, 'RA'], 2)
+                dec = round(Results_DF.loc[idx, 'DEC'], 3)
+                ax.plot([], label=f'RA: {ra}\nDec: {dec}')
+                ax.legend(handlelength=0, handletextpad=0)
             
             for k, name in enumerate(PDFs_Dict):
                 ax.plot(x, PDFs_Dict[name][idx], label=name, c=colors[k])
             ax.axvline(Results_DF.loc[idx, 'z'], ls='--', c='k', label='$z_{spec}$')
-            ax.set_xlim(0, 7)
-            ax.set_xticks(range(8))
+            ax.set_xlim(0, 5)
+            ax.set_xticks(range(6))
             
             if i == 0:
                 ax.set_title(z_conds[j].replace('z', '$z_{spec}$'))
