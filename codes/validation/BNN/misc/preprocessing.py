@@ -27,8 +27,14 @@ def split(dataframe, test_frac:float, seed:int):
 
     else:
         dataframe, _, _ = create_bins(data=dataframe, bin_size=0.5, return_data=True, var='Z')
-        train_sample, test_sample = train_test_split(
-            dataframe, test_size=test_frac, stratify=dataframe['Zclass'], random_state=seed)   
+        
+        # Hard-coded
+        split1, split2 = train_test_split(dataframe, test_size=0.5, random_state=823, stratify=dataframe['Zclass'])
+        split3, test_sample = train_test_split(split2, test_size=0.5, random_state=124, stratify=split2['Zclass'])
+        train_sample = pd.concat([split1, split3])
+        
+        # train_sample, test_sample = train_test_split(
+        #     dataframe, test_size=test_frac, stratify=dataframe['Zclass'], random_state=seed)
         
     print('# Train Size:    ', len(train_sample))
     print('# Test Size:     ', len(test_sample))
