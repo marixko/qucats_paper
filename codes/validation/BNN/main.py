@@ -30,12 +30,12 @@ scheme = 'KFold'
 train = True
 predict = True
 
-mags = ['broad', 'wise', 'galex']
+mags = ['broad', 'narrow', 'wise', 'galex']
 configs = {'mag': False, 'col': True, 'rat': False}
 aperture = 'PStotal'
 final_predict_path = ''  # CHECK LATER
 
-obs = '_dr4_BWG_flag'
+obs = '_dr4_BNWG_flag'
 if scheme == 'KFold':
     test_frac = 0.25
     model_path = os.path.join(results_path, f'crossval_model{obs}', '')

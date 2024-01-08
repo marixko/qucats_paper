@@ -28,6 +28,7 @@ def sampling(Model:dict, Testing_Dataframe:dict, Testing_Data_Features, Num_Samp
     
     Testing_Data_Target = Testing_Dataframe['Test']['Z'].values
     Result_DF = pd.DataFrame()
+    Result_DF['SDSS_NAME'] = Testing_Dataframe['Test']['SDSS_NAME'].values
     Result_DF['ID_SPLUS'] = Testing_Dataframe['Test']['ID'].values
     Result_DF['RA'] = Testing_Dataframe['Test']['RA_1'].values
     Result_DF['DEC'] = Testing_Dataframe['Test']['DEC_1'].values
