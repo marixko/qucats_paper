@@ -36,7 +36,7 @@ match_path = os.path.join(data_path, 'crossmatch')
 if not os.path.exists(match_path):
     os.makedirs(match_path)
 
-validation_path = os.path.join(data_path, 'validation')
+validation_path = os.path.join(data_path, 'crossvalidation')
 if not os.path.exists(validation_path):
     os.makedirs(validation_path)
 
