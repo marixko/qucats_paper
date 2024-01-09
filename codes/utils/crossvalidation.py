@@ -3,11 +3,12 @@ import pandas as pd
 import numpy as np
 import os
 import pickle
+import warnings
 from utils.preprocessing import create_bins
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import StratifiedKFold
 from settings.paths import rf_path, validation_path
-from settings.columns import specz
+from settings.columns import specz, aper
 
 
 def count_bins(z, itvs):
@@ -35,8 +36,68 @@ def metric_per_bin(metric, z:pd.core.frame.DataFrame, itvs:pd.core.frame.Series,
         metrics_bin.append(metric_bin)
     return np.array(metrics_bin)
 
+def save_folds(train, zclass_train):
+    skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=47)
+    i=0
+    for train_index, val_index in skf.split(train, zclass_train):
+        mag_train_cv, mag_val_cv = train.iloc[train_index], train.iloc[val_index]
+        mag_train_cv.index.name = "index"
+        mag_val_cv.index.name = "index"
+        mag_train_cv.to_csv(os.path.join(validation_path,"trainf"+str(i)+"_latest.csv"), sep=",")
+        mag_val_cv.to_csv(os.path.join(validation_path,"valf"+str(i)+"_latest.csv"), sep=",")
+        i = i+1
+    return
+
+def read_folds():
+    mag_train_cv = {}
+    mag_val_cv = {}
+    z_train_cv = {}
+    z_val_cv = {}
+    for i in range(0,5):
+        mag_train_cv["fold"+str(i)] = pd.read_csv(os.path.join(validation_path,"trainf"+str(i)+"_latest.csv"), index_col="index")
+        mag_val_cv["fold"+str(i)] = pd.read_csv(os.path.join(validation_path,"valf"+str(i)+"_latest.csv"), index_col="index")
+        z_train_cv["fold"+str(i)] = mag_train_cv["fold"+str(i)].Z
+        z_val_cv["fold"+str(i)] = mag_val_cv["fold"+str(i)].Z
+
+    return mag_train_cv, mag_val_cv, z_train_cv, z_val_cv
+
+def xval_results(feat, filename,  save_model=False, save_result=True):
+    mag_train_cv = {}
+    mag_val_cv = {}
+    z_train_cv = {}
+    z_val_cv = {}
+
+    mag_train_cv, mag_val_cv, z_train_cv, z_val_cv = read_folds()
+
+    z = pd.DataFrame()
+
+    i=0
+    for fold in mag_train_cv:
+        mag = pd.DataFrame(mag_val_cv[fold]["r_"+aper], columns={"r_"+aper})
+
+        model = RandomForestRegressor(random_state = 47, bootstrap= True, max_depth= 20, min_samples_leaf= 2, min_samples_split= 2, n_estimators= 400, n_jobs=-1)
+        # model = RandomForestRegressor(random_state = 47)
+        model.fit(mag_train_cv[fold][feat], z_train_cv[fold])
+        if save_model:
+            file = os.path.join(rf_path,'RF_'+filename+'fold_'+str(i)+'.sav')
+            pickle.dump(model, open(file, 'wb'))
+    
+        z_p = pd.DataFrame(model.predict(mag_val_cv[fold][feat]), index=mag_val_cv[fold].index, columns=["z_pred"])
+        z_val = pd.DataFrame(z_val_cv[fold])
+        
+        z_aux = pd.concat([z_p,z_val, mag], axis = 1)
+        z_aux["fold"] = i
+        z = pd.concat([z,z_aux], axis = 0)
+        i=i+1
+
+    if save_result:
+        z.to_csv(os.path.join(rf_path,"z_"+filename+".csv"), index=True)
+    return z
 
 def xval(train, zclass_train, feat, filename, aper, save_data=False, save_model=False, save_result=True):
+    # Deprecated warning:
+    warnings.warn("This function is deprecated. Use xval_results instead.", DeprecationWarning)
+
     mag_train_cv = {}
     mag_val_cv = {}
     z_train_cv = {}
@@ -60,7 +121,7 @@ def xval(train, zclass_train, feat, filename, aper, save_data=False, save_model=
     for fold in mag_train_cv:
         mag = pd.DataFrame(mag_val_cv[fold]["r_"+aper], columns={"r_"+aper})
 
-        model = RandomForestRegressor(random_state = 47, bootstrap= True, max_depth= 20, min_samples_leaf= 2, min_samples_split= 2, n_estimators= 400)
+        model = RandomForestRegressor(random_state = 47, bootstrap= True, max_depth= 20, min_samples_leaf= 2, min_samples_split= 2, n_estimators= 400, n_jobs=-1)
         # model = RandomForestRegressor(random_state = 47)
         model.fit(mag_train_cv[fold][feat], z_train_cv[fold])
         if save_model:
@@ -100,34 +161,3 @@ def calculate_single(model, metric, rmax = None, rmin = None, zmax = None, zmin=
 
     return np.mean(output), np.std(output)
 
-
-def print_metrics(z, cutoff=None, xval=True):
-    rmse_list = []
-    sigma_list = []
-    bias_list = []
-    n30_list = []
-    n15_list = []
-
-    if cutoff>0:
-        z = z.query("Z<=5")
-
-    if xval:
-        for fold in z.fold.unique():
-            rmse_list.append(rmse(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
-            sigma_list.append(nmad(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
-            bias_list.append(bias(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
-            n30_list.append(out_frac(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred, 0.3))
-            n15_list.append(out_frac(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred, 0.15))
-        print('RMSE', np.round(np.mean(rmse_list),4), np.round(np.std(rmse_list),4))
-        print('NMAD', np.round(np.mean(sigma_list),4),  np.round(np.std(sigma_list),4))
-        print('bias', np.round(np.mean(bias_list),4),  np.round(np.std(bias_list),4))
-        print('n30', np.round(np.mean(n30_list),4),  np.round(np.std(n30_list),4))
-        print('n15', np.round(np.mean(n15_list),4),  np.round(np.std(n15_list),4))
-    else:
-        print('RMSE', np.round(rmse(z_aux.Z,z_aux.z_pred),4), np.round(rmse(z_aux.Z,z_aux.z_pred),4))
-        print('NMAD', np.round(sigma(z_aux.Z,z_aux.z_pred),4),  np.round(sigma(z_aux.Z,z_aux.z_pred),4))
-        print('bias', np.round(bias(z_aux.Z,z_aux.z_pred),4),  np.round(bias(z_aux.Z,z_aux.z_pred),4))
-        print('n30', np.round(out_frac(z_aux.Z,z_aux.z_pred, 0.30),4),  np.round(out_frac(z_aux.Z,z_aux.z_pred, 0.30),4))
-        print('n15', np.round(out_frac(z_aux.Z,z_aux.z_pred, 0.15),4),  np.round(out_frac(z_aux.Z,z_aux.z_pred,0.15),4))
-        
-    return

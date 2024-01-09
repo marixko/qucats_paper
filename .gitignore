@@ -170,3 +170,7 @@ cython_debug/
 *.txt
 *.csv
 *.rds
+
+*.RData*
+*.Rhistory
+

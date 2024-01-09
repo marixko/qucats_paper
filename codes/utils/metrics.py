@@ -1,6 +1,7 @@
 import numpy as np
 import warnings
 
+## Single-point estimate metrics ##
 
 def mse(y, y_pred) -> float:
     try:
@@ -120,3 +121,41 @@ def Q(alpha:int, x, cdf_object, lower=True):
     q_val = (1 - (alpha/100)) / 2
     if lower: return x[find_nearest_idx(cdf_object, q_val)]
     else: return x[find_nearest_idx(cdf_object, 1-q_val)]
+
+
+## Printing functions ##
+
+def print_metrics(z, zmax=None, zmin=None, xval=True):
+    rmse_list = []
+    sigma_list = []
+    bias_list = []
+    n30_list = []
+    n15_list = []
+
+    # check if zmax is None:
+    if zmax:
+        z = z.query(f'Z<={zmax}')
+    if zmin:
+        z = z.query(f'Z>{zmin}')
+
+
+    if xval:
+        for fold in z.fold.unique():
+            rmse_list.append(rmse(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
+            sigma_list.append(nmad(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
+            bias_list.append(bias(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred))
+            n30_list.append(out_frac(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred, 0.3))
+            n15_list.append(out_frac(z[z["fold"]==fold].Z, z[z["fold"]==fold].z_pred, 0.15))
+        print('RMSE', np.round(np.mean(rmse_list),4), np.round(np.std(rmse_list),4))
+        print('NMAD', np.round(np.mean(sigma_list),4),  np.round(np.std(sigma_list),4))
+        print('bias', np.round(np.mean(bias_list),4),  np.round(np.std(bias_list),4))
+        print('n30', np.round(np.mean(n30_list),4),  np.round(np.std(n30_list),4))
+        print('n15', np.round(np.mean(n15_list),4),  np.round(np.std(n15_list),4))
+    else:
+        print('RMSE', np.round(rmse(z_aux.Z,z_aux.z_pred),4), np.round(rmse(z_aux.Z,z_aux.z_pred),4))
+        print('NMAD', np.round(nmad(z_aux.Z,z_aux.z_pred),4),  np.round(sigma(z_aux.Z,z_aux.z_pred),4))
+        print('bias', np.round(bias(z_aux.Z,z_aux.z_pred),4),  np.round(bias(z_aux.Z,z_aux.z_pred),4))
+        print('n30', np.round(out_frac(z_aux.Z,z_aux.z_pred, 0.30),4),  np.round(out_frac(z_aux.Z,z_aux.z_pred, 0.30),4))
+        print('n15', np.round(out_frac(z_aux.Z,z_aux.z_pred, 0.15),4),  np.round(out_frac(z_aux.Z,z_aux.z_pred,0.15),4))
+        
+    return
