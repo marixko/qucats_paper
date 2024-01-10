@@ -1,0 +1,472 @@
+
+---
+title: "FlexCoDE_analyses"
+author: "Gabriela Pereira Soares, Rafael Izbicki and Lilianne Nakazono"
+date: "09/03/2023"
+output: html_document
+editor_options: 
+  chunk_output_type: console
+---
+
+# Setup
+```{r setup, include=FALSE}
+require("knitr")
+knitr::opts_chunk$set(echo = TRUE)
+knitr::opts_chunk$set(root.dir = '/Users/Mariko/Documents/Projects/qucats_paper/codes/notebooks')
+# rstudioapi::restartSession()
+# usethis::edit_ r_environ()
+```
+
+```{r}
+# install.packages("devtools")
+library(devtools)
+# devtools::install_github("tpospisi/cdetools/r")
+# devtools::install_github("rizbicki/FlexCoDE")
+```
+
+```{r libs, include=FALSE, message=FALSE}
+library(ggplot2)
+library(FlexCoDE)
+library(cdetools)
+```
+
+
+```{r paths}
+wd <- getwd()
+setwd(file.path("..", "..", "data", "crossvalidation"))
+crossvalidation_path <- getwd()
+setwd(file.path("..", "..", "results", "validation", "flexcode"))
+model_path <- getwd() 
+setwd(file.path("..",   "bnn"))
+bnn_path <- getwd() 
+setwd(file.path("..", "rf"))
+rf_path <- getwd() 
+setwd(file.path("..", "..", "..", "_img"))
+img_path <- getwd() 
+setwd(wd)
+```
+
+```{r cde_loss function}
+cde_loss <- function(cdes, z_grid, z_test) {
+  if (!is.matrix(z_grid)) {
+    z_grid <- as.matrix(z_grid)
+  }
+
+  if (!is.matrix(z_test)) {
+    z_test <- as.matrix(z_test)
+  }
+
+  stopifnot(nrow(cdes) == nrow(z_test))
+  stopifnot(ncol(cdes) == nrow(z_grid))
+  stopifnot(ncol(z_grid) == ncol(z_test))
+
+  z_min <- apply(z_grid, 2, min)
+  z_max <- apply(z_grid, 2, max)
+  z_delta <- prod(z_max - z_min) / nrow(z_grid)
+
+  integrals <- z_delta * rowSums(cdes ^ 2)
+
+  nn_ids <- cbind(seq_len(nrow(z_test)), FNN::knnx.index(z_grid, z_test, k = 1))
+  likeli <- cdes[nn_ids]
+
+  losses <- integrals - 2 * likeli
+
+  return(list(loss_list = losses,
+              loss = mean(losses),
+              se = stats::sd(losses) / sqrt(nrow(cdes))))
+}
+```
+
+
+# Reading test dataset
+
+```{r}
+test=read.csv(file.path(crossvalidation_path,"test.csv"), encoding = "utf8")
+```
+
+```{r}
+colors_broad <-  c("u_PStotal.r_PStotal",
+               "g_PStotal.r_PStotal",
+               "r_PStotal.i_PStotal",
+               "r_PStotal.z_PStotal")
+
+colors_wise <- c("r_PStotal.W1", "r_PStotal.W2")
+
+colors_galex <- c("FUVmag.r_PStotal", "NUVmag.r_PStotal")
+
+color_narrow <- c("J0378_PStotal.r_PStotal",
+                  "J0395_PStotal.r_PStotal",
+                  "J0410_PStotal.r_PStotal",
+                  "J0430_PStotal.r_PStotal",
+                  "J0515_PStotal.r_PStotal",
+                  "r_PStotal.J0660_PStotal",
+                  "r_PStotal.J0861_PStotal")
+
+flags <- c("flag_GALEX", "flag_WISE")
+
+feat_broad <- c(colors_broad,colors_galex,colors_wise, flags)
+feat_all <- c(color_narrow, colors_broad, colors_wise, colors_galex, flags)
+
+```
+
+
+
+```{r test}
+# Test
+test = subset(x = test, subset = Z<5) # EXCLUDING Z > 5 objects from test sample
+xtest1=test[c(colors_broad,colors_galex, colors_wise, flags)]
+xtest2=test[feat_all]
+ztest=test["Z"]
+```
+
+
+# Model broad+GALEX+WISE
+# Reading models
+
+```{r models}
+fit0 <- readRDS(file.path(model_path,"fit1.rds"))
+fit1 <- readRDS(file.path(model_path,"fit1_1.rds"))
+fit2 <- readRDS(file.path(model_path,"fit1_2.rds"))
+fit3 <- readRDS(file.path(model_path,"fit1_3.rds"))
+fit4 <- readRDS(file.path(model_path,"fit1_4.rds"))
+fits <- list(fit0,fit1,fit2,fit3,fit4)
+```
+
+```{r}
+data_cov <- test[,colnames(fit0$xTrain)]
+```
+
+```{r}
+test[,colnames(fit0$xTrain)]
+```
+
+```{r}
+B <- 200
+pred <- array(NA,dim=c(length(fits),nrow(data_cov),B))
+for(ii in seq_along(fits))
+{
+  pred[ii,,] <- predict(fits[[ii]],data_cov,B=B)$CDE
+}
+pred <- apply(pred, c(2,3), function(x) mean(x))
+colnames(pred) <- paste0("z_flex_pdf_",1:B)
+```
+
+
+```{r}
+save <- TRUE
+save_filepath <- file.path(model_path,"test_z_broad+GALEX+WISE+flags.csv")
+info <- test[,c("RA_1","DEC_1")]
+# add mode of the densities (z_peak), a point estimate of the redshift
+grid <- predict(fits[[1]],data_cov[1,,drop=FALSE],B=B)$z
+z_flex_peak <- grid[apply(pred,1,which.max)]
+if (save==TRUE) {
+  write.csv(cbind(info,z_flex_peak,pred), save_filepath ,row.names = FALSE)
+} 
+```
+
+```{r}
+write.csv(grid, file.path(model_path, "z_grid.csv"))
+
+```
+
+
+```{r}
+ # Without narrow
+ pred0=predict(fit0,data_cov,B=fit0$n_grid,predictionBandProb=FALSE)
+ pred1=predict(fit1,data_cov,B=fit1$n_grid,predictionBandProb=FALSE)
+ pred2=predict(fit2,data_cov,B=fit2$n_grid,predictionBandProb=FALSE)
+ pred3=predict(fit3,data_cov,B=fit3$n_grid,predictionBandProb=FALSE)
+ pred4=predict(fit4,data_cov,B=fit4$n_grid,predictionBandProb=FALSE)
+```
+
+
+```{r}
+ # Predictions
+ pred_mean_broad = list(z=(pred0$z+pred1$z+pred2$z+pred3$z+pred4$z)/5,CDE=(pred0$CDE+pred1$CD+pred2$CDE+pred3$CDE+pred4$CDE)/5)
+```
+
+
+```{r}
+saveRDS(pred_mean_broad, file.path(model_path, "pred_mean_broad.rds"))
+```
+
+```{r}
+cde_flex_broad = cde_loss(pred_mean_broad$CDE, pred_mean_broad$z, ztest)
+```
+
+```{r}
+cde_flex_broad$loss
+```
+
+```{r}
+importance<-print(fit0)$data
+importance1<-print(fit1)$data
+importance2<-print(fit2)$data
+importance3<-print(fit3)$data
+importance4<-print(fit4)$data
+
+df<-cbind(importance, importance1$frequency, importance2$frequency, importance3$frequency, importance4$frequency)
+df["mean_frequency"] <- rowMeans(df[,c(2,3,4,5,6)])
+row_sd <- apply(df[,c(2,3,4,5,6)], 1, sd)  
+df["std_frequency"] <- row_sd
+print(df[,c(7,8)])
+```
+
+
+```{r}
+# Calculate PIT
+# min 0 and max 1 
+cov_broad=data.frame(x=cdf_coverage(pred_mean_broad$CDE, pred_mean_broad$z, ztest$Z))
+ggplot(cov_broad, aes(x=x)) + 
+ geom_histogram(aes(y=..count..), colour="white", fill="#0072B2", alpha=0.7)+
+ #geom_density(colour="#0072B2")+
+ theme_light()+
+ theme(plot.title=element_text(hjust=0.5))+
+ labs(x="PIT Values", y="Densidade", title="FlexCoDE without narrow bands")
+```
+
+```{r}   
+write.csv(cov_broad, file.path(model_path, "pit_broad_flex.csv"))
+```
+
+
+# Model broad+GALEX+WISE+narrow+flags
+
+Reading models
+
+```{r models}
+fit0 <- readRDS(file.path(model_path,"fit2.rds"))
+fit1 <- readRDS(file.path(model_path,"fit2_1.rds"))
+fit2 <- readRDS(file.path(model_path,"fit2_2.rds"))
+fit3 <- readRDS(file.path(model_path,"fit2_3.rds"))
+fit4 <- readRDS(file.path(model_path,"fit2_4.rds"))
+fits <- list(fit0,fit1,fit2,fit3,fit4)
+```
+
+```{r}
+data_cov <- test[,colnames(fit0$xTrain)]
+```
+
+```{r}
+B <- 200
+pred <- array(NA,dim=c(length(fits),nrow(data_cov),B))
+for(ii in seq_along(fits))
+{
+  pred[ii,,] <- predict(fits[[ii]],data_cov,B=B)$CDE
+}
+pred <- apply(pred, c(2,3), function(x) mean(x))
+colnames(pred) <- paste0("z_flex_pdf_",1:B)
+```
+
+
+```{r}
+save <- TRUE
+save_filepath <- file.path(model_path,"test_z_broad+GALEX+WISE+narrow+flags.csv")
+info <- test[,c("RA_1","DEC_1")]
+# add mode of the densities (z_peak), a point estimate of the redshift
+grid <- predict(fits[[1]],data_cov[1,,drop=FALSE],B=B)$z
+z_flex_peak <- grid[apply(pred,1,which.max)]
+if (save==TRUE) {
+  write.csv(cbind(info,z_flex_peak,pred), save_filepath ,row.names = FALSE)
+} 
+```
+
+
+```{r}
+ # With narrow
+ pred0=predict(fit0,data_cov,B=fit0$n_grid,predictionBandProb=FALSE)
+ pred1=predict(fit1,data_cov,B=fit1$n_grid,predictionBandProb=FALSE)
+ pred2=predict(fit2,data_cov,B=fit2$n_grid,predictionBandProb=FALSE)
+ pred3=predict(fit3,data_cov,B=fit3$n_grid,predictionBandProb=FALSE)
+ pred4=predict(fit4,data_cov,B=fit4$n_grid,predictionBandProb=FALSE)
+```
+
+
+```{r}
+ # Predictions
+ pred_mean_narrow = list(z=(pred0$z+pred1$z+pred2$z+pred3$z+pred4$z)/5,CDE=(pred0$CDE+pred1$CD+pred2$CDE+pred3$CDE+pred4$CDE)/5)
+```
+
+```{r}
+saveRDS(pred_mean_narrow, file.path(model_path, "pred_mean_narrow.rds"))
+```
+
+```{r}
+cde_flex_narrow = cde_loss(pred_mean_narrow$CDE, pred_mean_narrow$z, test["Z"])
+```
+
+```{r}
+cde_flex_narrow$loss
+```
+
+```{r}
+# Caclulate PIT
+# min 0 and max 1 
+cov_narrow=data.frame(x=cdf_coverage(pred_mean_narrow$CDE, pred_mean_narrow$z, ztest$Z))
+ggplot(cov_narrow, aes(x=x)) + 
+ geom_histogram(aes(y=..count..), colour="white", fill="#0072B2", alpha=0.7)+
+ #geom_density(colour="#0072B2")+
+ theme_light()+
+ theme(plot.title=element_text(hjust=0.5))+
+ labs(x="PIT Values", y="Densidade", title="FlexCoDE with narrow bands")
+```
+
+```{r}
+write.csv(cov_narrow, file.path(model_path, "pit_narrow_flex.csv"))
+```
+
+```{r}
+importance<-print(fit0)$data
+importance1<-print(fit1)$data
+```
+
+```{r}
+fit0$nIMax
+fit0$bestDelta
+fit0$bestAlpha
+```
+
+
+```{r}
+importance<-print(fit0)$data
+importance1<-print(fit1)$data
+importance2<-print(fit2)$data
+importance3<-print(fit3)$data
+importance4<-print(fit4)$data
+
+df<-cbind(importance, importance1$frequency, importance2$frequency, importance3$frequency, importance4$frequency)
+df["mean_frequency"] <- rowMeans(df[,c(2,3,4,5,6)])
+row_sd <- apply(df[,c(2,3,4,5,6)], 1, sd)  
+df["std_frequency"] <- row_sd
+print(df[,c(7,8)])
+```
+
+```{r}  
+write.csv(df, file.path(model_path, "mean_importances.csv"))
+```
+
+
+# BMDN
+
+```{r}
+grid_z = read.csv(file.path(model_path, "z_grid.csv"))
+grid_z = grid_z$x
+```
+
+
+```{r}
+# reading data
+colors_broad <- read.csv(file.path(bnn_path,"crossval_model-ext-nonb", "Results_DF.csv"))
+colors_narrow <- read.csv(file.path(bnn_path,"crossval_model-ext-nb", "Results_DF.csv"))
+```
+
+
+```{r}
+colors_broad = subset(x = colors_broad, subset = z<5) 
+colors_narrow = subset(x = colors_narrow, subset = z<5) 
+```
+
+```{r}
+col_w <- paste("PDF_Weight_", 0:6, sep = "")
+col_m <- paste("PDF_Mean_", 0:6, sep = "")
+col_s <- paste("PDF_STD_", 0:6, sep = "")
+```
+
+```{r}
+pdf_weights_b = colors_broad[col_w]
+pdf_mean_b = colors_broad[col_m]
+pdf_std_b = colors_broad[col_s]
+
+pdf_weights_n = colors_narrow[col_w]
+pdf_mean_n = colors_narrow[col_m]
+pdf_std_n = colors_narrow[col_s]
+```
+
+
+
+```{r}
+calcula_dens = function(grid_z, mean, std, w){
+  dens = list()
+  for(i in 1:nrow(mean)){
+    dens_l = list()
+    for(j in 1:7){
+      dens_l[[j]] = dnorm(grid_z, mean=mean[i,j], sd=std[i,j])*w[i,j]
+    }
+    soma = Reduce("+", dens_l)
+    dens[[i]] = soma
+  }
+  return(dens)
+}
+```
+
+
+```{r}
+dens_broad = calcula_dens(grid_z, pdf_mean_b, pdf_std_b, pdf_weights_b)
+dens_narrow = calcula_dens(grid_z, pdf_mean_n, pdf_std_n, pdf_weights_n)
+```
+
+```{r}
+# Convertendo para matriz
+dens_matrix_b = matrix(unlist(dens_broad), ncol = 1000, nrow = 8167, byrow=TRUE)
+dens_matrix_n = matrix(unlist(dens_narrow), ncol = 1000, nrow = 8167, byrow=TRUE)
+```
+
+
+```{r loss}
+# Loss e erro padrão
+cde_bnn_broad = cde_loss(dens_matrix_b, grid_z, colors_broad$z)
+cde_bnn_narrow = cde_loss(dens_matrix_n, grid_z, colors_narrow$z)
+```
+
+```{r}
+cde_bnn_broad$loss
+```
+
+```{r}
+cde_bnn_narrow$loss
+```
+
+```{r}
+cde_bnn_broad
+```
+
+
+# RF
+
+```{r}
+dens_broad <- read.csv(file.path(rf_path,"pdf_test_broad.csv"), header=TRUE, row.names=1)
+```
+
+
+```{r}
+dens_matrix_b = matrix(unlist(dens_broad), nrow = 8167, byrow=TRUE)
+```
+
+
+```{r}
+cde_rf_broad = cde_loss(dens_matrix_b, grid_z, ztest$Z)
+```
+
+
+```{r}
+cde_rf_broad$loss
+```
+
+```{r}
+dens_narrow <- read.csv(file.path(rf_path,"pdf_test_narrow.csv"), header=TRUE, row.names=1)
+```
+
+
+```{r}
+dens_matrix_n = matrix(unlist(dens_narrow), nrow = 8167, byrow=TRUE)
+```
+
+
+```{r}
+cde_rf_narrow = cde_loss(dens_matrix_n, grid_z, ztest$Z)
+```
+
+
+```{r}
+cde_rf_narrow$loss
+```
