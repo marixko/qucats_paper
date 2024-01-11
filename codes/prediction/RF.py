@@ -9,7 +9,7 @@ from utils.crossvalidation import xval
 from settings.paths import rf_path
 from sklearn.ensemble import RandomForestRegressor
 
-aux = os.path.join(Path.cwd(), "codes")
+aux = os.path.join(Path(__file__).parents[1])
 if str(aux) not in sys.path:
     sys.path.append(aux)
 

@@ -174,3 +174,4 @@ cython_debug/
 *.RData*
 *.Rhistory
 
+*.sav

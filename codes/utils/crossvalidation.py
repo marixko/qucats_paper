@@ -43,8 +43,8 @@ def save_folds(train, zclass_train):
         mag_train_cv, mag_val_cv = train.iloc[train_index], train.iloc[val_index]
         mag_train_cv.index.name = "index"
         mag_val_cv.index.name = "index"
-        mag_train_cv.to_csv(os.path.join(validation_path,"trainf"+str(i)+"_latest.csv"), sep=",")
-        mag_val_cv.to_csv(os.path.join(validation_path,"valf"+str(i)+"_latest.csv"), sep=",")
+        mag_train_cv.to_csv(os.path.join(validation_path,"trainf"+str(i)+".csv"), sep=",")
+        mag_val_cv.to_csv(os.path.join(validation_path,"valf"+str(i)+".csv"), sep=",")
         i = i+1
     return
 
@@ -54,14 +54,14 @@ def read_folds():
     z_train_cv = {}
     z_val_cv = {}
     for i in range(0,5):
-        mag_train_cv["fold"+str(i)] = pd.read_csv(os.path.join(validation_path,"trainf"+str(i)+"_latest.csv"), index_col="index")
-        mag_val_cv["fold"+str(i)] = pd.read_csv(os.path.join(validation_path,"valf"+str(i)+"_latest.csv"), index_col="index")
+        mag_train_cv["fold"+str(i)] = pd.read_csv(os.path.join(validation_path,"trainf"+str(i)+".csv"), index_col="index")
+        mag_val_cv["fold"+str(i)] = pd.read_csv(os.path.join(validation_path,"valf"+str(i)+".csv"), index_col="index")
         z_train_cv["fold"+str(i)] = mag_train_cv["fold"+str(i)].Z
         z_val_cv["fold"+str(i)] = mag_val_cv["fold"+str(i)].Z
 
     return mag_train_cv, mag_val_cv, z_train_cv, z_val_cv
 
-def xval_results(feat, filename,  save_model=False, save_result=True):
+def xval_results(feat, filename, dict_params,  save_model=False, save_result=True):
     mag_train_cv = {}
     mag_val_cv = {}
     z_train_cv = {}
@@ -73,10 +73,9 @@ def xval_results(feat, filename,  save_model=False, save_result=True):
 
     i=0
     for fold in mag_train_cv:
-        mag = pd.DataFrame(mag_val_cv[fold]["r_"+aper], columns={"r_"+aper})
+        mag = pd.DataFrame(mag_val_cv[fold]["r_"+aper], columns=["r_"+aper])
 
-        model = RandomForestRegressor(random_state = 47, bootstrap= True, max_depth= 20, min_samples_leaf= 2, min_samples_split= 2, n_estimators= 400, n_jobs=-1)
-        # model = RandomForestRegressor(random_state = 47)
+        model = RandomForestRegressor(**dict_params)
         model.fit(mag_train_cv[fold][feat], z_train_cv[fold])
         if save_model:
             file = os.path.join(rf_path,'RF_'+filename+'fold_'+str(i)+'.sav')
@@ -91,7 +90,7 @@ def xval_results(feat, filename,  save_model=False, save_result=True):
         i=i+1
 
     if save_result:
-        z.to_csv(os.path.join(rf_path,"z_"+filename+".csv"), index=True)
+        z.to_csv(os.path.join(rf_path,"val_z_"+filename+".csv"), index=True)
     return z
 
 def xval(train, zclass_train, feat, filename, aper, save_data=False, save_model=False, save_result=True):

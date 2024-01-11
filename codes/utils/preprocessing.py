@@ -2,12 +2,32 @@ import warnings
 
 import numpy as np
 import pandas as pd
+from sklearn.model_selection import train_test_split
 
-from settings.columns import wise, galex, splus, aper
+from settings.columns import wise, galex, splus, aper, calculate_colors, specz
+from utils.correct_extinction import correction
 
 
 pd.set_option('mode.chained_assignment',  None)
 
+def preprocessing(table):
+    data = table.copy(deep=True)
+    data = mag_redshift_selection(data, rmax=22, zmax=5)
+    data = prep_wise(data)
+    data = flag_observation(data)
+    data = correction(data)
+    data = missing_input(data)
+    data = calculate_colors(data, broad = True, narrow= True, wise = True, galex= True, aper=aper)
+    data, bins, itvs = create_bins(data = data, bin_size=0.5, return_data = True, var = specz)
+    return data
+
+def split_data(table):
+    split1, split2 = train_test_split(table, test_size=0.5, random_state=823, stratify=table['Zclass'])
+    split3, test = train_test_split(split2, test_size=0.5, random_state=124, stratify=split2['Zclass'])
+
+    train = pd.concat([split1, split3])
+
+    return train, test
 
 def mag_redshift_selection(dataframe:pd.DataFrame, rmax="None", rmin="None", zmax="None", zmin="None"):
     df = dataframe.copy()
