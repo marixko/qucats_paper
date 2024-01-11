@@ -3,14 +3,11 @@ from itertools import combinations
 from warnings import simplefilter
 
 import numpy as np
-import pandas as pd
-
-simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
-from sklearn.model_selection import train_test_split
+import pandas as pd; simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 from sklearn.preprocessing import QuantileTransformer, MinMaxScaler
 import matplotlib.pyplot as plt
 
-from utils.preprocessing import mag_redshift_selection, prep_wise, flag_observation, create_bins
+from utils.preprocessing import mag_redshift_selection, prep_wise, flag_observation, create_bins, split_data
 from utils.correct_extinction import correction
 from settings.columns import (aper, specz, broad, narrow, splus, error_splus, wise_flux, wise, galex,
                               create_colors, calculate_colors, create_ratio, calculate_ratio)
@@ -29,9 +26,7 @@ def split(dataframe, test_frac:float, seed:int):
         dataframe, _, _ = create_bins(data=dataframe, bin_size=0.5, return_data=True, var='Z')
         
         # Hard-coded
-        split1, split2 = train_test_split(dataframe, test_size=0.5, random_state=823, stratify=dataframe['Zclass'])
-        split3, test_sample = train_test_split(split2, test_size=0.5, random_state=124, stratify=split2['Zclass'])
-        train_sample = pd.concat([split1, split3])
+        train_sample, test_sample = split_data(dataframe)
         
         # train_sample, test_sample = train_test_split(
         #     dataframe, test_size=test_frac, stratify=dataframe['Zclass'], random_state=seed)
