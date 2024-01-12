@@ -213,31 +213,29 @@ def plot_scatter_z(model, per="r", save=False):
 
 def plot_metric_per_bin(list_models,data, metric,bins, color_feat, per="r_PStotal", cutoff = 5, std=False, save=False, idx= None):
     string = str(list_models[0])
-    df_no99 = {}
+    # df_no99 = {}
     result = {}
-    aux = {}
+    # aux = {}
     for model in list_models:
         # aux[model] = data[model].query("r_PStotal!=99 or g_PStotal!= 99")
-        aux[model] = data[model].query("r_PStotal!=99")
-        aux[model] = aux[model].query("Z<" +str(cutoff))
-        df_no99[model] = data[model]
+        # aux[model] = data[model].query("r_PStotal!=99")
+        # aux[model] = aux[model].query("Z<" +str(cutoff))
+        # df_no99[model] = data[model]
         # df_no99[model]["g-r"] = aux[model].g_PStotal - aux[model].r_PStotal
         # df_no99[model] = df_no99[model].loc[idx]
 
         if model != list_models[0]:
             string = string+"x"+str(model)
     
-        result[model] = metrics_bin(df_no99[model], metric, bins = bins , var = per)
+        # result[model] = metrics_bin(df_no99[model], metric, bins = bins , var = per)
+        result[model] = metrics_bin(data=data[model], metric = metric, bins = bins , var = per)
     
     fig, ax = plt.subplots(1,1, figsize=(10,7))
 
     plt.ticklabel_format(axis='y', style='sci', scilimits=(0,0))
     # ax.yaxis.set_major_formatter(FormatStrFormatter('%.2f'))
-    for name in df_no99:
-        
-        # if per == "z":
-        #     result[name] = result[name].query("bins<5")
-            
+
+    for name in data:            
         ax.scatter(result[name].bins, result[name][metric.__name__+"_median"], color=color_feat[name])
         ax.plot(result[name].bins, result[name][metric.__name__+"_median"], "--", label=name, color=color_feat[name])
         
@@ -268,14 +266,17 @@ def plot_metric_per_bin(list_models,data, metric,bins, color_feat, per="r_PStota
         
     ax.grid()
     if len(list_models)>1:
-        ax.legend(loc ="upper right", prop={"size":16})
-    # plt.legend()
+        ax.legend(loc ="upper right", prop={"size":15})
+    leg = plt.legend()
+    leg_lines = leg.get_lines()
+    plt.setp(leg_lines, linewidth=3)
+    
     plt.tight_layout()
     if save:
-        # plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".png"),
-        #              facecolor="white", transparent=False)
         plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".png"),
                      facecolor="white", transparent=False)
+        plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".eps"),
+                     facecolor="white", transparent=False, format="eps")
     
     
 def metrics_bin(data, metric, bins="None", var="g-r"):
@@ -289,7 +290,7 @@ def metrics_bin(data, metric, bins="None", var="g-r"):
     for i in list_folds:
         aux = data.query("fold == "+ str(i))
         output_bin = metric_per_bin(metric = metric, z = aux, itvs = itv_r)
-        output_bin = pd.DataFrame(output_bin, columns={metric.__name__+"_fold"+str(i)})
+        output_bin = pd.DataFrame(output_bin, columns=[metric.__name__+"_fold"+str(i)])
         original = pd.concat([original,output_bin], axis=1)
         original.insert(0, "n_fold"+str(i), count_bins(aux, itv_r))
         

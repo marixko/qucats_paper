@@ -51,7 +51,7 @@ test = pd.read_csv(os.path.join(validation_path,"test.csv"), index_col="index")
 
 # Fine tuning 
     
-run_gridsearch = False
+run_gridsearch = True
 
 if run_gridsearch == False:
     dict_gridsearch = {}
@@ -59,6 +59,7 @@ if run_gridsearch == False:
     dict_gridsearch["broad+GALEX+WISE+flags"] = pickle.load(open(os.path.join(rf_path,'GridSearch_broad+GALEX+WISE+flags.sav'), 'rb')).best_params_
 
 else:
+    print("Running gridsearch")
     param_grid = { 
         'n_estimators': [100, 200, 400],
         'bootstrap': [True, False],
@@ -66,13 +67,13 @@ else:
         'min_samples_leaf': [1, 2, 4],
         'min_samples_split': [2, 5, 10]
     }
-    model = RandomForestRegressor(random_state = 47)
+    model = RandomForestRegressor(random_state = 47, n_jobs=-1)
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=47)
     CV = GridSearchCV(estimator=model, param_grid=param_grid, cv=skf)
     CV.fit(train[feat["broad+GALEX+WISE+narrow+flags"]], train.Zclass)
     filename = os.path.join(rf_path,'GridSearch_broad+GALEX+WISE+narrow+flags.sav')
     pickle.dump(CV, open(filename, 'wb'))
-
+    print(CV.best_params_)
     # CV = GridSearchCV(estimator=model, param_grid=param_grid, cv=skf)
     # CV.fit(train[feat["broad+GALEX+WISE+flags"]], train.Zclass)
     # pickle.dump(CV, open(filename, 'wb'))
@@ -85,15 +86,17 @@ save_result = True
 z={}
 
 if run_crossvalidation:
+    print("Running crossvalidation")
     for key, value in feat.items():
         print(key)
         z[key] = xval_results(feat[key], key, dict_gridsearch["broad+GALEX+WISE+narrow+flags"], save_model=save_model, save_result=save_result)
 
 # Test
-        
+
 save_model = False
 save_result = True
 
+print("Runnning test")
 mag = pd.DataFrame(test["r_"+aper], columns=["r_"+aper])
 mag["g_"+aper] = test["g_"+aper]
 mag["g-r"] = mag["g_"+aper] - mag["r_"+aper]
@@ -114,7 +117,7 @@ for key in ["broad+GALEX+WISE+narrow+flags", "broad+GALEX+WISE+flags"]:
         z.to_csv(os.path.join(rf_path,"test_z_"+key+".csv"))
 
 # Final model for production:
-        
+print("Running final model")
 model = RandomForestRegressor(**dict_gridsearch["broad+GALEX+WISE+narrow+flags"])
 spec = pd.concat([train, test])
 model.fit(spec[feat["broad+GALEX+WISE+narrow+flags"]], spec.Z)

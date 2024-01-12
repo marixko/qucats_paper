@@ -109,9 +109,9 @@ def prep_data(dataframe:pd.DataFrame, aper:str, rmax="None", rmin="None", zmax="
     return df
 
 
-def create_bins(data, return_data=False, var="Z", bin_size=0.5, bins="None"):
+def create_bins(data, return_data=False, var="Z", bin_size=0.5, bins=None):
 
-    if bins == "None":
+    if bins is None:
         xmin = np.floor(np.min(data[var]))
         xmax = np.ceil(np.max(data[data[var]!=99][var]))
         if xmax - np.max(data[data[var]!=99][var]) > bin_size:
