@@ -91,32 +91,32 @@ if run_crossvalidation:
 
 # Test
         
-# save_model = False
-# save_result = True
+save_model = False
+save_result = True
 
-# mag = pd.DataFrame(test["r_"+aper], columns=["r_"+aper])
-# mag["g_"+aper] = test["g_"+aper]
-# mag["g-r"] = mag["g_"+aper] - mag["r_"+aper]
+mag = pd.DataFrame(test["r_"+aper], columns=["r_"+aper])
+mag["g_"+aper] = test["g_"+aper]
+mag["g-r"] = mag["g_"+aper] - mag["r_"+aper]
 
-# for key in ["broad+GALEX+WISE+narrow+flags", "broad+GALEX+WISE+flags"]:
-#     print(key)
-#     model = RandomForestRegressor(**dict_gridsearch[key])
-#     model.fit(train[feat[key]], train.Z)
+for key in ["broad+GALEX+WISE+narrow+flags", "broad+GALEX+WISE+flags"]:
+    print(key)
+    model = RandomForestRegressor(**dict_gridsearch[key])
+    model.fit(train[feat[key]], train.Z)
 
-#     if save_model:
-#         filename = os.path.join(rf_path,'RF_train_'+key+'.sav')
-#         pickle.dump(model, open(filename, 'wb'))
+    if save_model:
+        filename = os.path.join(rf_path,'RF_train_'+key+'.sav')
+        pickle.dump(model, open(filename, 'wb'))
 
-#     z_p = pd.DataFrame(model.predict(test[feat[key]]), index=test.index, columns=["z_pred"])
-#     z_test = pd.DataFrame(test.Z)
-#     z = pd.concat([z_p,z_test, mag], axis = 1)
-#     if save_result:
-#         z.to_csv(os.path.join(rf_path,"test_z_"+key+".csv"))
+    z_p = pd.DataFrame(model.predict(test[feat[key]]), index=test.index, columns=["z_pred"])
+    z_test = pd.DataFrame(test.Z)
+    z = pd.concat([z_p,z_test, mag], axis = 1)
+    if save_result:
+        z.to_csv(os.path.join(rf_path,"test_z_"+key+".csv"))
 
 # Final model for production:
         
-# model = RandomForestRegressor(**dict_gridsearch["broad+GALEX+WISE+narrow+flags"])
-# spec = pd.concat([train, test])
-# model.fit(spec[feat["broad+GALEX+WISE+narrow+flags"]], spec.Z)
-# filename = os.path.join(rf_path,'RF_final_'+key+'.sav')
-# pickle.dump(model, open(filename, 'wb'))
+model = RandomForestRegressor(**dict_gridsearch["broad+GALEX+WISE+narrow+flags"])
+spec = pd.concat([train, test])
+model.fit(spec[feat["broad+GALEX+WISE+narrow+flags"]], spec.Z)
+filename = os.path.join(rf_path,'RF_final_'+key+'.sav')
+pickle.dump(model, open(filename, 'wb'))

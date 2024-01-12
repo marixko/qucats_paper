@@ -152,10 +152,10 @@ def print_metrics_xval(z, zmax=None, zmin=None):
     return
 
 def print_metrics_test(z_true, z_pred):
-    print('RMSE', np.round(rmse(z_true,z_pred),4), np.round(rmse(z_true,z_pred),4))
-    print('NMAD', np.round(nmad(z_true,z_pred),4),  np.round(nmad(z_true,z_pred),4))
-    print('bias', np.round(bias(z_true,z_pred),4),  np.round(bias(z_true,z_pred),4))
-    print('n15', np.round(out_frac(z_true,z_pred, 0.15),4),  np.round(out_frac(z_true,z_pred,0.15),4))
-    print('n30', np.round(out_frac(z_true,z_pred, 0.30),4),  np.round(out_frac(z_true,z_pred, 0.30),4))
+    print('RMSE', np.round(rmse(z_true,z_pred),4))
+    print('NMAD', np.round(nmad(z_true,z_pred),4))
+    print('bias', np.round(bias(z_true,z_pred),4))
+    print('n15', np.round(out_frac(z_true,z_pred, 0.15),4))
+    print('n30', np.round(out_frac(z_true,z_pred, 0.30),4))
     return
  
