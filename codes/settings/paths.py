@@ -25,7 +25,7 @@ result_path = os.path.join(parent_cwd,  'results')
 if not os.path.exists(result_path):
     os.makedirs(result_path)
 
-img_path = os.path.join(parent_cwd,  '_img')
+img_path = os.path.join(parent_cwd,  'img')
 if not os.path.exists(img_path):
     os.makedirs(img_path)
 
