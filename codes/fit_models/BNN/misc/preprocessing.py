@@ -1,16 +1,14 @@
 import os
-from itertools import combinations
 from warnings import simplefilter
 
-import numpy as np
 import pandas as pd; simplefilter(action="ignore", category=pd.errors.PerformanceWarning)
 from sklearn.preprocessing import QuantileTransformer, MinMaxScaler
 import matplotlib.pyplot as plt
 
 from utils.preprocessing import mag_redshift_selection, prep_wise, flag_observation, create_bins, split_data
 from utils.correct_extinction import correction
-from settings.columns import (aper, specz, broad, narrow, splus, error_splus, wise_flux, wise, galex,
-                              create_colors, calculate_colors, create_ratio, calculate_ratio)
+from settings.columns import (aper, specz, splus, error_splus, wise_flux, galex,
+                              list_feat, create_colors, calculate_colors, create_ratio, calculate_ratio)
 from settings.paths import match_path as data_path
 
 
@@ -62,7 +60,7 @@ def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:i
                   aper=aper, save_stuff=True):
     pd.options.mode.chained_assignment = None  # default='warn'
     
-    flag_obs = True
+    flag_obs = False
     
     # Reading data
     file_path = os.path.join(data_path, filename)
@@ -84,31 +82,15 @@ def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:i
     # Processed dataframe
     if save_stuff: data.to_csv(os.path.join(output_dir, 'dataframe.csv'), index=False)
     
-    # List with magnitude names    
-    magnitudes = []
-    broad_bool, narrow_bool, wise_bool, galex_bool = False, False, False, False
-    
-    if 'broad' in mags and 'narrow' in mags:
-        broad_bool, narrow_bool = True, True
-        magnitudes.extend(splus)
-    elif 'broad' in mags:
-        broad_bool = True
-        magnitudes.extend(broad)
-    elif 'narrow' in mags:
-        narrow_bool = True
-        magnitudes.extend(narrow)
-    if 'wise' in mags:
-        wise_bool = True
-        magnitudes.extend(wise)
-    if 'galex' in mags:
-        galex_bool = True
-        magnitudes.extend(galex)
-    
     # Defining features    
     feature_list = []
+    broad_bool = 'broad' in mags
+    narrow_bool = 'narrow' in mags
+    wise_bool = 'wise' in mags
+    galex_bool = 'galex' in mags
     
     if configs['mag']:
-        feature_list += magnitudes
+        feature_list += list_feat(aper, broad_bool, narrow_bool, wise_bool, galex_bool)
 
     if configs['col']:
         feature_list += create_colors(broad_bool, narrow_bool, wise_bool, galex_bool, aper)
@@ -147,87 +129,3 @@ def Process_Split(filename:str, mags:list, configs:dict, test_frac:float, seed:i
     
     if test_frac == 0:
         return train_sample, feature_list, scaler_1, scaler_2, train_mask
-
-
-def calc_colors(Dataframe, Aper:str, Magnitudes:list) -> list:
-
-    Reference_Mag  = 'r_'+Aper
-    Reference_Idx = Magnitudes.index(Reference_Mag)
-    MagnitudesToLeft = Magnitudes[:Reference_Idx]
-    MagnitudesToRight = Magnitudes[(Reference_Idx+1):]
-
-    for feature in MagnitudesToLeft: # of Reference_Mag
-        Dataframe[feature+'-'+Reference_Mag] = Dataframe[feature] - Dataframe[Reference_Mag]
-
-    for feature in MagnitudesToRight: # of Reference_Mag
-        Dataframe[Reference_Mag+'-'+feature] = Dataframe[Reference_Mag] - Dataframe[feature]
-    
-    Colors = []
-    for s in Dataframe.columns.values:
-        if '-' in s:
-            if s.split('-')[0] in Magnitudes and s.split('-')[1] in Magnitudes:
-                Colors.append(s)
-    
-    return Colors
-
-
-def calc_ratios(Dataframe, Features:list) -> list:
-    
-    combs = list(combinations(Features, 2))
-    Ratios = []
-    
-    for comb in combs:
-        name = comb[0] + '/' + comb[1]
-        Dataframe[name] = Dataframe[comb[0]] / Dataframe[comb[1]]
-        Ratios.append(name)
-
-    return Ratios
-
-
-def Process_Final(dataframe, mags:list, configs:dict, aper='PStotal'):
-    '''CHECK LATER'''
-    
-    if 'broad' in mags and 'narrow' in mags:
-        splus = ['u', 'J0378', 'J0395', 'J0410', 'J0430', 'g', 'J0515', 'r', 'J0660', 'i', 'J0861', 'z']
-    elif 'broad' in mags:
-        splus = ['u', 'g', 'r', 'i', 'z']
-    elif 'narrow' in mags:
-        splus = ['J0378', 'J0395', 'J0410', 'J0430', 'J0515', 'J0660', 'J0861']
-    Magnitudes_WISE = ['W1_MAG','W2_MAG'] if 'wise' in mags else []
-    Magnitudes_GALEX = ['FUVmag', 'NUVmag'] if 'galex' in mags else []
-
-    Magnitudes_SPLUS = [item+'_'+aper for item in splus]
-    Errors_SPLUS = ['e_'+item for item in Magnitudes_SPLUS]
-    magnitudes = Magnitudes_GALEX + Magnitudes_SPLUS + Magnitudes_WISE  # It's important to keep this order
-    
-    # Non detected/observed objects
-    for mag in magnitudes:
-        dataframe[mag][~dataframe[mag].between(10, 50)] = np.nan
-
-    # Replace S-PLUS missing features with the upper magnitude limit (the value in the error column)
-    for mag, error in zip(Magnitudes_SPLUS, Errors_SPLUS):
-        dataframe[mag].fillna(dataframe[error], inplace=True)
-    
-    feature_list = []
-    
-    if configs['mag']:
-        feature_list += magnitudes
-
-    if configs['col']:
-        if 'broad' not in mags:
-            # Inserting r band in the correct position only to calculate colors
-            j0660_idx = magnitudes.index('J0660_'+aper)
-            colors_magnitudes = magnitudes[:j0660_idx] + ['r_'+aper] + magnitudes[j0660_idx:]
-        else:
-            colors_magnitudes = magnitudes
-        Colors = calc_colors(dataframe, aper, colors_magnitudes)
-        feature_list += Colors
-    
-    if configs['rat']:
-        Ratios = calc_ratios(dataframe, magnitudes)
-        feature_list += Ratios
-    
-    # Mask
-    mask = dataframe[feature_list].isna().reset_index(drop=True)
-
-    return dataframe, feature_list, mask
