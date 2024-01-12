@@ -175,3 +175,7 @@ cython_debug/
 *.Rhistory
 
 *.sav
+
+# BNN results
+!/results/validation/bnn/**/Results_DF.csv
+!/results/validation/bnn/**/*.txt
