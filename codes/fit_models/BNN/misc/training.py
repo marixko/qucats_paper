@@ -11,7 +11,7 @@ from tqdm.keras import TqdmCallback
 import joblib
 
 from misc.preprocessing import Process_Split
-from misc.network import Dense_Variational, Epochs, Batch_Size, Activation, Opt
+from misc.network import Dense_Variational, epochs, batch_size, activation, opt
 
 
 def config_model(filename:str, magnitudes:list, configs:dict, test_frac:float, seed:int, output_dir:str, scheme:str):
@@ -96,8 +96,8 @@ def all_train(Dataset:dict, Training_Data_Features, Training_Data_Target, Train_
         Train_Sample_Size=len(Training_Data_Features), Number_of_Features=len(Train_Var))
 
     # Fitting the model
-    Model_Fit[fold_number] = Model[fold_number].fit(Training_Data_Features, Training_Data_Target, epochs=Epochs,
-                                                    batch_size=Batch_Size, verbose=0,
+    Model_Fit[fold_number] = Model[fold_number].fit(Training_Data_Features, Training_Data_Target, epochs=epochs,
+                                                    batch_size=batch_size, verbose=0,
                                                     callbacks=[CheckpointEpoch, TqdmCallback(verbose=0)],
                                                     sample_weight=Dataset['Train']['weights'].values)
 
@@ -144,7 +144,7 @@ def kfold(Dataset:dict, Training_Data_Features, Training_Data_Target, Testing_Da
         CheckpointEpoch = callbacks.ModelCheckpoint(CheckpointFolderEpoch, verbose=0, period=500)
 
         # Compiling new model for each fold
-        Model[fold_number] = Dense_Variational(Train_Sample_Size=len(train), Number_of_Features=len(Train_Var))
+        Model[fold_number] = Dense_Variational(train_sample_size=len(train), n_features=len(Train_Var))
 
         # Fitting the model
         Model_Fit[fold_number] = Model[fold_number].fit(Training_Data_Features[train], Training_Data_Target[train],
@@ -152,7 +152,7 @@ def kfold(Dataset:dict, Training_Data_Features, Training_Data_Target, Testing_Da
                                                         validation_data=(Training_Data_Features[validation],
                                                                          Training_Data_Target[validation],
                                                                          Dataset['Train']['weights'].values[validation]), 
-                                                        epochs=Epochs, batch_size=Batch_Size, verbose=0,
+                                                        epochs=epochs, batch_size=batch_size, verbose=0,
                                                         callbacks=[TqdmCallback(verbose=0)])
 
         # Save the model and loss
@@ -176,14 +176,14 @@ def save_model(scheme:str, filename:str, Dataset:dict, Training_Data_Features, T
     with open(output_dir+'Model_Summary.txt', 'w') as f:
         Model[0].summary(print_fn=lambda x: f.write(x + '\n'))
         f.write(f'Output dir: {output_dir}\n')
-        f.write(f'Epochs: {Epochs}, Batch_Size: {Batch_Size}\n')
+        f.write(f'epochs: {epochs}, batch_size: {batch_size}\n')
         
         if scheme == 'AllTrain':
-            f.write(f'Activation: {Activation.name}, kl_weight: 1/{len(Training_Data_Features)}\n')
+            f.write(f'activation: {activation.name}, kl_weight: 1/{len(Training_Data_Features)}\n')
         else:
-            f.write(f'Activation: {Activation.name}, kl_weight: 1/{len_train}\n')
+            f.write(f'activation: {activation.name}, kl_weight: 1/{len_train}\n')
             
-        f.write(f'Optimizer: {Opt.get_config()}\n')
+        f.write(f'Optimizer: {opt.get_config()}\n')
         f.write(f'Loss: {Model[0].loss.__name__}\n')
         f.write(f'Input file: {filename}\n')
         if scheme == 'AllTrain':
@@ -227,7 +227,7 @@ def plot_loss(scheme:str, seed:int, output_dir:str):
         plt.plot(loss_file['loss'], lw=1, alpha=1)
         plt.ylim(Min_Y-5, 50)
         plt.ylabel('Loss (NLL)')
-        plt.xlabel('Epochs')
+        plt.xlabel('epochs')
         
     else:
         _, ax = plt.subplots(1, len(Folds)+1, figsize=(3*len(Folds)+1, 4))
@@ -242,7 +242,7 @@ def plot_loss(scheme:str, seed:int, output_dir:str):
             ax[i].plot(loss_file['val_loss'], lw=1, alpha=1, label='Validation')
             ax[i].set_title(f'Fold {i}')
             if i == 0: ax[i].set_ylabel('Loss (NLL)')
-            ax[i].set_xlabel('Epochs')
+            ax[i].set_xlabel('epochs')
             ax[i].set_ylim(Min_Y-5, Min_Y+50)
             ax[i].legend()
         MeanTrain = np.median(np.array(loss), axis=0)
@@ -251,7 +251,7 @@ def plot_loss(scheme:str, seed:int, output_dir:str):
         ax[-1].plot(MeanTrain, lw=1, alpha=1, label='Train')
         ax[-1].plot(MeanValid, lw=1, alpha=1, label='Validation')
         ax[-1].set_title('Median')
-        ax[-1].set_xlabel('Epochs')
+        ax[-1].set_xlabel('epochs')
         ax[-1].set_ylim(Min_Y-5, Min_Y+50)
         ax[-1].legend()
 
