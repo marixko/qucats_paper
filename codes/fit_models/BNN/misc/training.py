@@ -44,7 +44,8 @@ def config_model(filename:str, magnitudes:list, configs:dict, test_frac:float, s
     return Dataset, Training_Data_Features, Training_Data_Target, Testing_Data_Features, Train_Var, Save_IDs
 
 
-def plot_kfold(skfold, Training_Data_Features, Testing_Data_Features, Train_Var:list, Training_Data_Zclass, output_dir:str):
+def plot_kfold(skfold, Training_Data_Features, Testing_Data_Features, Train_Var:list, Training_Data_Zclass,
+               output_dir:str):
     
     fig, _ = plt.subplots(figsize=(20,20))
     plt.subplots_adjust(hspace=0.5, wspace=0.5)
@@ -92,8 +93,7 @@ def all_train(Dataset:dict, Training_Data_Features, Training_Data_Target, Train_
     CheckpointFolderEpoch = output_dir + f'Checkpoints/Fold{fold_number}' + '/Epoch{epoch:02d}'
     CheckpointEpoch = callbacks.ModelCheckpoint(CheckpointFolderEpoch, verbose=0, period=300)
 
-    Model[fold_number] = Dense_Variational(
-        Train_Sample_Size=len(Training_Data_Features), Number_of_Features=len(Train_Var))
+    Model[fold_number] = Dense_Variational(train_sample_size=len(train), n_features=len(Train_Var))
 
     # Fitting the model
     Model_Fit[fold_number] = Model[fold_number].fit(Training_Data_Features, Training_Data_Target, epochs=epochs,
@@ -168,8 +168,8 @@ def kfold(Dataset:dict, Training_Data_Features, Training_Data_Target, Testing_Da
     return Model, Model_Fit, len(train)
     
     
-def save_model(scheme:str, filename:str, Dataset:dict, Training_Data_Features, Train_Var:list, Model:dict, len_train:int,
-               output_dir:str):
+def save_model(scheme:str, filename:str, Dataset:dict, Training_Data_Features, Train_Var:list, Model:dict,
+               len_train:int, output_dir:str):
     
     # Save model summary to file with some extra info
     #https://stackoverflow.com/questions/45199047/how-to-save-model-summary-to-file-in-keras
@@ -207,8 +207,8 @@ def train_model(filename:str, magnitudes:list, configs:dict, test_frac:float, se
                                                 output_dir)
     
     else:
-        Model, Model_Fit, len_train = kfold(Dataset, Training_Data_Features, Training_Data_Target, Testing_Data_Features,
-                                            Train_Var, Save_IDs, seed, output_dir)
+        Model, Model_Fit, len_train = kfold(Dataset, Training_Data_Features, Training_Data_Target,
+                                            Testing_Data_Features, Train_Var, Save_IDs, seed, output_dir)
 
     save_model(scheme, filename, Dataset, Training_Data_Features, Train_Var, Model, len_train, output_dir)
     

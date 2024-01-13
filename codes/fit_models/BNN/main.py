@@ -24,18 +24,20 @@ from misc.plots import Benchmarks
 
 data = 'STRIPE82_DR4_DR16Q1a_unWISE2a_GALEXDR672a.csv'
 model_seed = 47
-scheme = 'KFold'
+scheme = 'AllTrain'
 
-mags = ['broad', 'narrow', 'wise', 'galex']
+mags = ['broad', 'wise', 'galex']
 configs = {'mag': False, 'col': True, 'rat': False}
 
-obs = '_dr4_BNWG_test'
+obs = '_dr4_BWG'
 if scheme == 'KFold':
     test_frac = 0.25
     model_path = os.path.join(results_path, f'crossval_model{obs}', '')
-else:
+elif scheme == 'AllTrain':
     test_frac = 0
     model_path = os.path.join(results_path, f'final_model{obs}', '')
+else:
+    print('Choose scheme.')
 
 if not os.path.isdir(model_path): os.makedirs(model_path)
 print(f'# Model output directory: {model_path}')
