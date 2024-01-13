@@ -177,3 +177,19 @@ def rename_aper(data:pd.DataFrame):
                              "s2n_F861_"+aper: "s2n_J0861_"+aper
                              }, inplace=True)
     return data
+
+# Did two steps of train_test_split just to ensure that some specific targets (9) are in the test set
+# These 9 targets were originally used to plot some PDFs in thr first draft of the paper
+
+# sample = pd.read_csv(os.path.join(data_path, "sample_plot_paper_9.txt"), delim_whitespace=True)
+# list_ids = sample["ID_1"].apply(lambda x: x.split(" ")[0].split("-")[-1])
+# check=False
+# k=0
+# while check==False:
+#     train, test = train_test_split(data, test_size=0.5, random_state=823, stratify=data['Zclass'])
+#     train2, test2 = train_test_split(test, test_size=0.5, random_state=124, stratify=test['Zclass'])
+#     list_ids_test = test2["ID"].apply(lambda x: x.split(" ")[0].split("-")[-1])
+#     compare = [True if i in list_ids_test.values else False for i in list_ids.values]
+#     print(compare)
+#     check = all(compare)
+#     k+=1

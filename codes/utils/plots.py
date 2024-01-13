@@ -4,7 +4,6 @@ import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as MplColors
-from matplotlib.ticker import FormatStrFormatter
 from settings.paths import validation_path, img_path
 from utils.preprocessing import create_bins
 from utils.crossvalidation import metric_per_bin, count_bins
@@ -44,7 +43,7 @@ def cols2labels(colnames):
             pass
     return colnames
 
-def plot_r(data, new, save=False):
+def plot_r(data, new):
     
     fig = plt.figure(figsize=(10,5))
     bins = np.arange(14,26,0.05)
@@ -58,7 +57,7 @@ def plot_r(data, new, save=False):
     return fig
 
 
-def plot_z(data, new, save=False):
+def plot_z(data, new):
     
     fig = plt.figure(figsize=(10,5))
     bins = np.arange(0,5,0.025)
@@ -100,60 +99,6 @@ def plot_metrics(metric, list_models):
     plt.xlabel("Spectroscopic Redshift")
     plt.legend()
 
-
-# def plot_metric_per_bin(list_models, column, per="r", std=False, save=False):
-#     plt.rcParams["font.size"] = 22
-#     plt.rcParams["ytick.minor.visible"] = True
-#     plt.rcParams["xtick.minor.visible"] = True
-#     dict_df = {}
-#     string = str(list_models[0])
-
-#     for model in list_models:
-#         dict_df[model] = pd.read_table(os.path.join(validation_path, "metric_per_bin",
-#                                                     per+"_metrics_"+str(model)), sep=",", index_col="index")
-#         if model != list_models[0]:
-#             string = string+"x"+str(model)
-            
-#     fig, ax = plt.subplots(1,1, figsize=(10,6))
-#     for name, c in zip(dict_df, CB_color_cycle):
-        
-#         if per == "z":
-#             dict_df[name] = dict_df[name].query("bins<5")
-            
-#         ax.scatter(dict_df[name].bins, dict_df[name][column+"_median"], color=c)
-#         ax.plot(dict_df[name].bins, dict_df[name][column+"_median"], "--", label=name, color=c)
-        
-#         if std == True:
-#             ax.fill_between(
-#                 dict_df[name].bins,
-#                 dict_df[name][column+"_median"]-dict_df[name][column+"_median"[0:-6]+"std"],
-#                 dict_df[name][column+"_median"]+dict_df[name][column+"_median"[0:-6]+"std"], alpha=0.5, color=c)
-
-#     if per == "r":
-#         ax.set_xlabel("r")
-#     else:
-#         ax.set_xlabel("Spectroscopic Redshift")
-                
-#     # ax.legend()
-
-#     if column == "rmse":
-#         ax.set_ylabel(r"$\sigma_{RMSE}$")
-#     elif column == "out_frac":
-#         ax.set_ylabel(r"$\eta$")
-#     elif column == "bias":
-#         ax.set_ylabel("Bias")
-#     elif column == "mse":
-#         ax.set_ylabel("MSE")
-#     else:
-#         ax.set_ylabel(r"$\sigma_{NMAD}$")   
-        
-#     # ax.grid()
-#     fig.tight_layout()
-
-#     if save:
-#         plt.savefig(os.path.join(img_path, string+"_"+column+"_"+per+".png"),
-#                     bbox_inches="tight", facecolor="white", transparent=False)
-#     # ax.set_ylabel(dict_df[name][column+"_median"].name)
     
 
 def plot_scatter_z(model, per="r", save=False):

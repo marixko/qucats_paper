@@ -67,12 +67,14 @@ else:
         'min_samples_leaf': [1, 2, 4],
         'min_samples_split': [2, 5, 10]
     }
-    model = RandomForestRegressor(random_state = 47, n_jobs=-1)
+    model = RandomForestRegressor(random_state = 47, n_jobs=-4)
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=47)
     CV = GridSearchCV(estimator=model, param_grid=param_grid, cv=skf)
     CV.fit(train[feat["broad+GALEX+WISE+narrow+flags"]], train.Zclass)
     filename = os.path.join(rf_path,'GridSearch_broad+GALEX+WISE+narrow+flags.sav')
     pickle.dump(CV, open(filename, 'wb'))
+    dict_gridsearch = {}
+    dict_gridsearch["broad+GALEX+WISE+narrow+flags"] = CV.best_params_
     print(CV.best_params_)
     # CV = GridSearchCV(estimator=model, param_grid=param_grid, cv=skf)
     # CV.fit(train[feat["broad+GALEX+WISE+flags"]], train.Zclass)
