@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 import os
+
 import numpy as np
 import pandas as pd
 import matplotlib.pyplot as plt
 import matplotlib.colors as MplColors
+
 from settings.paths import validation_path, img_path
 from utils.preprocessing import create_bins
 from utils.crossvalidation import metric_per_bin, count_bins
@@ -13,10 +15,7 @@ plt.rcParams["font.size"] = 22
 plt.rcParams["ytick.minor.visible"] = True
 plt.rcParams["xtick.minor.visible"] = True
 
-CB_color_cycle = ["#377eb8", "#ff7f00", "#4daf4a",
-                  "#f781bf", "#a65628", "#984ea3",
-                  "#999999", "#e41a1c", "#dede00"]
-
+CB_color_cycle = ["#377eb8", "#ff7f00", "#4daf4a", "#f781bf", "#a65628", "#984ea3", "#999999", "#e41a1c", "#dede00"]
 
 
 def cols2labels(colnames):
@@ -43,10 +42,11 @@ def cols2labels(colnames):
             pass
     return colnames
 
+
 def plot_r(data, new):
     
     fig = plt.figure(figsize=(10,5))
-    bins = np.arange(14,26,0.05)
+    bins = np.arange(14, 26, 0.05)
     data.query("r_iso!=99").r_iso.hist(bins=bins, density=True, alpha=0.6, label="sample")
     new.query("r_iso!=99").r_iso.hist(bins=bins, density=True, alpha=0.6, label="true")
     plt.legend()
@@ -88,18 +88,17 @@ def plot_metrics(metric, list_models):
         if "aug" in key:
             label = "XDGMM"
         else:
-            label="Original"
+            label = "Original"
             
         plt.plot(results[key]["bins"], results[key][metric.__name__])
         plt.scatter(results[key]["bins"], results[key][metric.__name__], label=label)
         
-    plt.xlim(0,5)
+    plt.xlim(0, 5)
     plt.grid(axis="y")
     plt.ylabel(ylabel)
     plt.xlabel("Spectroscopic Redshift")
     plt.legend()
 
-    
 
 def plot_scatter_z(model, per="r", save=False):
     plt.rcParams["font.size"] = 22
@@ -108,7 +107,7 @@ def plot_scatter_z(model, per="r", save=False):
 
     df = pd.read_table(os.path.join(validation_path, "original", "z_"+str(model)), sep=",", index_col="index")
     
-    fig, [ax,ax2] = plt.subplots(2,1, figsize=(8,10), sharex=True, gridspec_kw={'height_ratios': [2,1]})
+    fig, [ax,ax2] = plt.subplots(2, 1, figsize=(8,10), sharex=True, gridspec_kw={'height_ratios':[2,1]})
     df_99 = df.query("r_PStotal==99")
     df = df.drop(df_99.index)
     
@@ -129,14 +128,14 @@ def plot_scatter_z(model, per="r", save=False):
 
     ax2.grid()
     ax2.hexbin(df.Z, df.z_pred - df.Z, C=df.r_PStotal, gridsize=(100,30), mincnt=0,
-               extent=(0,7,-6.8,3.4), norm= norm, cmap = cmap, alpha=0.8)
+               extent=(0,7,-6.8,3.4), norm=norm, cmap=cmap, alpha=0.8)
     ax2.scatter(df_99.Z, df_99.z_pred - df_99.Z, c="black", marker="o", edgecolor="white", s=60)
     
     ax2.axhline(0, color="black", linestyle="dashed")
 
-    ax.set_ylim(0,7)
-    ax.set_xlim(0,7)
-    ax2.set_ylim(-6.8,3.4)
+    ax.set_ylim(0, 7)
+    ax.set_xlim(0, 7)
+    ax2.set_ylim(-6.8, 3.4)
     ax2.set_xlim(0,7)
     ax2.set_xlabel("Spectroscopic Redshift")
     ax.set_ylabel(r"$\bar{z}$")
@@ -155,14 +154,14 @@ def plot_scatter_z(model, per="r", save=False):
     # ax.set_ylabel(dict_df[name][column+"_median"].name)
 
 
-
-def plot_metric_per_bin(list_models,data, metric,bins, color_feat, per="r_PStotal", cutoff = 5, std=False, save=False, idx= None):
+def plot_metric_per_bin(list_models, data, metric, bins, color_feat, per="r_PStotal", cutoff=5, std=False, save=False,
+                        idx=None):
     string = str(list_models[0])
     result = {}
     for model in list_models:
         if model != list_models[0]:
             string = string+"x"+str(model)
-        result[model] = metrics_bin(data=data[model], metric = metric, bins = bins , var = per)
+        result[model] = metrics_bin(data=data[model], metric=metric, bins=bins, var=per)
     
     fig, ax = plt.subplots(1,1, figsize=(10,7))
 
@@ -176,11 +175,12 @@ def plot_metric_per_bin(list_models,data, metric,bins, color_feat, per="r_PStota
             ax.fill_between(
                 result[name].bins,
                 result[name][metric.__name__+"_median"]-result[name][metric.__name__+"_median"[0:-6]+"std"],
-                result[name][metric.__name__+"_median"]+result[name][metric.__name__+"_median"[0:-6]+"std"], alpha=0.5, color=color_feat[name])
+                result[name][metric.__name__+"_median"]+result[name][metric.__name__+"_median"[0:-6]+"std"],
+                alpha=0.5, color=color_feat[name])
 
     if per == "r_PStotal":
         ax.set_xlabel("r")
-    elif per =="Z":
+    elif per == "Z":
         ax.set_xlabel("Spectroscopic Redshift")
     else:
         ax.set_xlabel("g-r")           
@@ -198,8 +198,8 @@ def plot_metric_per_bin(list_models,data, metric,bins, color_feat, per="r_PStota
         ax.set_ylabel(r"$\sigma_{NMAD}$")   
         
     ax.grid()
-    if len(list_models)>1:
-        ax.legend(loc ="upper right", prop={"size":15})
+    if len(list_models) > 1:
+        ax.legend(loc="upper right", prop={"size":15})
     leg = plt.legend()
     leg_lines = leg.get_lines()
     plt.setp(leg_lines, linewidth=3)
@@ -211,9 +211,10 @@ def plot_metric_per_bin(list_models,data, metric,bins, color_feat, per="r_PStota
         plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".eps"),
                      facecolor="white", transparent=False, format="eps")
     return fig
-    
+
+
 def metrics_bin(data, metric, bins="None", var="g-r"):
-    bins_r, itv_r = create_bins(data, return_data = False, var = var,  bins= bins)
+    bins_r, itv_r = create_bins(data, return_data=False, var=var,  bins=bins)
     bin_size = bins_r[1] - bins_r[0]
     half_bins_r = np.arange(bins_r[0]+(bin_size/2), bins_r[-1]+bin_size/2, bin_size)
     
@@ -221,22 +222,91 @@ def metrics_bin(data, metric, bins="None", var="g-r"):
 
     original = pd.DataFrame()
     for i in list_folds:
-        aux = data.query("fold == "+ str(i))
-        output_bin = metric_per_bin(metric = metric, z = aux, itvs = itv_r)
+        aux = data.query("fold == "+str(i))
+        output_bin = metric_per_bin(metric=metric, z=aux, itvs=itv_r)
         output_bin = pd.DataFrame(output_bin, columns=[metric.__name__+"_fold"+str(i)])
         original = pd.concat([original,output_bin], axis=1)
         original.insert(0, "n_fold"+str(i), count_bins(aux, itv_r))
         
 
     result = pd.DataFrame()
-    aux = np.repeat(metric.__name__,5)
+    aux = np.repeat(metric.__name__, 5)
     aux = [t+'_fold'+str(i) for i,t in enumerate(aux)] 
     result.insert(0,metric.__name__+"_std", original[aux].T.std())
     result.insert(0, metric.__name__+"_median", original[aux].T.median())
     original.insert(0, "bins", half_bins_r)
 
-    aux = np.repeat("n_fold",5)
+    aux = np.repeat("n_fold", 5)
     aux = [t+str(i) for i,t in enumerate(aux)]
     result.insert(0, "n", original[aux].T.sum())
     result.insert(0, "bins", half_bins_r)
     return result
+
+
+def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, save=False):
+    
+    r_conds = [f'r_PStotal < 20', f'20 < r_PStotal < 21.3', f'r_PStotal > 21.3']
+    z_conds = ['z < 0.5', '0.5 < z < 3.5', '3.5 < z < 5']
+    n_r = idxs.shape[0]
+    n_z = idxs.shape[1]
+
+    fig, axes = plt.subplots(nrows=n_r, ncols=n_z, figsize=(3.8*n_z, 2.4*n_r))
+    for i in range(n_r):
+        for j in range(n_z):
+            ax = axes[i][j]
+            idx = idxs[i][j]
+            
+            sdss_name = sdss.loc[idx, 'SDSS_NAME']
+            ax.plot([], label=f'SDSS J{sdss_name}')
+            leg = ax.legend(loc='upper right', fontsize=10, handlelength=0, handletextpad=0, borderpad=0.1,
+                            framealpha=0.7)
+            leg.get_frame().set_linewidth(0.5)
+            
+            for model_name, df in models_dict.items():
+                
+                if alg == 'BMDN':
+                    weights = df.loc[idx, [f'PDF_Weight_{i}' for i in range(6)]].values.astype(float)
+                    means = df.loc[idx, [f'PDF_Mean_{i}' for i in range(6)]].values.astype(float)
+                    stds = df.loc[idx, [f'PDF_STD_{i}' for i in range(6)]].values.astype(float)
+                    pdf = np.sum(
+                        weights * (1/(stds*np.sqrt(2*np.pi))) * np.exp((-1/2)*((x[:, None]-means)**2)/(stds)**2),
+                        axis=1)
+                    pdf = pdf / np.trapz(pdf, x)
+                
+                elif alg == 'FlexCoDE':
+                    pdf = df.loc[idx, [f'z_flex_pdf_{i}' for i in range(1, 201)]].values
+                
+                else:
+                    print('"alg" param must be "BMDN" or "FlexCoDE"')
+                    break
+                
+                ax.plot(x, pdf, c=colors_dict[model_name], label=model_name)
+            
+            ax.axvline(z.loc[idx, 'z'], ls='--', c='k', label='$z_{spec}$')
+            ax.set_xlim(0, 5)
+            ax.set_xticks(range(6))
+            if i == 0:
+                ax.set_title(z_conds[j].replace('z', '$z_{spec}$'))
+            if n_r-i == 1:
+                ax.set_xlabel('$z_{phot}$')
+            else:
+                ax.set_xticklabels([])
+            if j == 0:
+                ax.set_ylabel('$p(z_{phot})$')
+            elif n_z-j == 1:
+                ax2 = ax.twinx()
+                ax2.set_yticks([])
+                ax2.set_ylabel(r_conds[i].replace(f'r_PStotal', '$r$'), rotation=270, labelpad=16, size=16)
+                
+    handles, labels = ax.get_legend_handles_labels()
+    fig.legend(handles=handles[1:], labels=labels[1:], loc='lower center', bbox_to_anchor=(0.5, -0.05),
+               ncol=1+len(models_dict))
+    fig.align_ylabels()
+    fig.tight_layout(pad=0.5)
+    if save:
+        plt.savefig(os.path.join(img_path, f'PDFs_{alg}.png'),  bbox_inches='tight', facecolor='white',
+                    transparent=False, dpi=300)
+        plt.savefig(os.path.join(img_path, f'PDFs_{alg}.eps'),  bbox_inches='tight', facecolor='white',
+                    transparent=False, format='eps')
+    plt.show()
+    plt.close()
