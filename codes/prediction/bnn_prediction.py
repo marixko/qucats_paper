@@ -10,10 +10,10 @@ aux = os.path.join(Path.cwd(), 'codes')
 if str(aux) not in sys.path:
     sys.path.append(aux)
 
-from settings.paths import result_path, bnn_path
+from settings.paths import result_path, bmdn_path
 from bnn_functions import PredictForFileNoTry
 
-model_path = os.path.join(bnn_path, 'final_model_dr4_BNWG')
+model_path = os.path.join(bmdn_path, 'final_model_dr4_BNWG')
 predict_path = os.path.join(result_path, 'prediction', 'bnn')
 
 folders = {'model': model_path,

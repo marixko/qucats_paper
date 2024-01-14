@@ -51,8 +51,8 @@ flex_path = os.path.join(result_path,'validation', 'flexcode')
 if not os.path.exists(flex_path):
     os.makedirs(flex_path)
 
-bnn_path = os.path.join(result_path,'validation', 'bnn')
-if not os.path.exists(bnn_path):
-    os.makedirs(bnn_path)
+bmdn_path = os.path.join(result_path,'validation', 'bmdn')
+if not os.path.exists(bmdn_path):
+    os.makedirs(bmdn_path)
 
 

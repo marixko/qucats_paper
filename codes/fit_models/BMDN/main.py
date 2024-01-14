@@ -15,7 +15,7 @@ if str(aux) not in sys.path:
     sys.path.append(aux)
 
 from settings.columns import aper
-from settings.paths import bnn_path as results_path
+from settings.paths import bmdn_path
 from misc.loading import load
 from misc.training import train_model, plot_loss
 from misc.sampling import sampling
@@ -32,10 +32,10 @@ configs = {'mag': False, 'col': True, 'rat': False}
 obs = '_dr4_BWG'
 if scheme == 'KFold':
     test_frac = 0.25
-    model_path = os.path.join(results_path, f'crossval_model{obs}', '')
+    model_path = os.path.join(bmdn_path, f'crossval_model{obs}', '')
 elif scheme == 'AllTrain':
     test_frac = 0
-    model_path = os.path.join(results_path, f'final_model{obs}', '')
+    model_path = os.path.join(bmdn_path, f'final_model{obs}', '')
 else:
     print('Choose scheme.')
 
