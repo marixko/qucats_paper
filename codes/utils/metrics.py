@@ -58,7 +58,7 @@ def out_frac(y, y_pred, cut=0.30) -> float:
         return np.nan
 
 
-## BNN ##
+## BMDN ##
 
 def find_nearest_idx(array, value):
     '''General function to find the nearest idx of an item in a list
