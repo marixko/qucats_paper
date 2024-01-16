@@ -257,8 +257,8 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
             idx = idxs[i][j]
             
             sdss_name = sdss.loc[idx, 'SDSS_NAME']
-            ax.plot([], label=f'SDSS J{sdss_name}')
-            leg = ax.legend(loc='upper right', fontsize=10, handlelength=0, handletextpad=0, borderpad=0.1,
+            ax.plot([], label=f'J{sdss_name}')
+            leg = ax.legend(loc='best', fontsize=10, handlelength=0, handletextpad=0, borderpad=0.1,
                             framealpha=0.7)
             leg.get_frame().set_linewidth(0.5)
             
@@ -272,9 +272,11 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
                         weights * (1/(stds*np.sqrt(2*np.pi))) * np.exp((-1/2)*((x[:, None]-means)**2)/(stds)**2),
                         axis=1)
                     pdf = pdf / np.trapz(pdf, x)
+                    ax.axvline(df.loc[idx, 'zphot'], ls='--', c=colors_dict[model_name])
                 
                 elif alg == 'FlexCoDE':
                     pdf = df.loc[idx, [f'z_flex_pdf_{i}' for i in range(1, 201)]].values
+                    ax.axvline(df.loc[idx, 'z_flex_peak'], ls='--', c=colors_dict[model_name])
                 
                 else:
                     print('"alg" param must be "BMDN" or "FlexCoDE"')
@@ -304,9 +306,7 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
     fig.align_ylabels()
     fig.tight_layout(pad=0.5)
     if save:
-        plt.savefig(os.path.join(img_path, f'PDFs_{alg}.png'),  bbox_inches='tight', facecolor='white',
-                    transparent=False, dpi=300)
-        plt.savefig(os.path.join(img_path, f'PDFs_{alg}.eps'),  bbox_inches='tight', facecolor='white',
-                    transparent=False, format='eps')
+        plt.savefig(os.path.join(img_path, f'PDFs_{alg}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
+        plt.savefig(os.path.join(img_path, f'PDFs_{alg}.eps'),  bbox_inches='tight', facecolor='white', format='eps')
     plt.show()
     plt.close()
