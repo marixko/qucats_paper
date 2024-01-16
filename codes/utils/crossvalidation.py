@@ -4,7 +4,6 @@ import numpy as np
 import os
 import pickle
 import warnings
-from utils.preprocessing import create_bins
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import StratifiedKFold
 from settings.paths import rf_path, validation_path
@@ -23,7 +22,7 @@ def count_bins(z, itvs):
     return n
 
 
-def metric_per_bin(metric, z:pd.core.frame.DataFrame, itvs:pd.core.frame.Series, column="z_pred"): 
+def metric_per_bin(metric, z, itvs, column="z_pred"): 
     metrics_bin = []
     # for i in sorted(itvs.unique().dropna()):
     for i in range(len(itvs.unique().value_counts())):
@@ -36,6 +35,7 @@ def metric_per_bin(metric, z:pd.core.frame.DataFrame, itvs:pd.core.frame.Series,
         metrics_bin.append(metric_bin)
     return np.array(metrics_bin)
 
+
 def save_folds(train, zclass_train):
     skf = StratifiedKFold(n_splits=5, shuffle=True, random_state=47)
     i=0
@@ -47,6 +47,7 @@ def save_folds(train, zclass_train):
         mag_val_cv.to_csv(os.path.join(validation_path,"valf"+str(i)+".csv"), sep=",")
         i = i+1
     return
+
 
 def read_folds():
     mag_train_cv = {}
@@ -61,7 +62,8 @@ def read_folds():
 
     return mag_train_cv, mag_val_cv, z_train_cv, z_val_cv
 
-def xval_results(feat, filename, dict_params,  save_model=False, save_result=True):
+
+def xval_results(feat, filename, dict_params, save_model=False, save_result=True):
     mag_train_cv = {}
     mag_val_cv = {}
     z_train_cv = {}
@@ -92,6 +94,7 @@ def xval_results(feat, filename, dict_params,  save_model=False, save_result=Tru
     if save_result:
         z.to_csv(os.path.join(rf_path,"val_z_"+filename+".csv"), index=True)
     return z
+
 
 def xval(train, zclass_train, feat, filename, aper, save_data=False, save_model=False, save_result=True):
     # Deprecated warning:
@@ -140,7 +143,7 @@ def xval(train, zclass_train, feat, filename, aper, save_data=False, save_model=
     return z
 
 
-def calculate_single(model, metric, rmax = None, rmin = None, zmax = None, zmin=None, aper="PStotal"):
+def calculate_single(model, metric, rmax=None, rmin=None, zmax=None, zmin=None, aper=aper):
     df = pd.read_table(os.path.join(rf_path,"z_"+model), index_col="index", sep=',')
     output = []
     if rmax:
@@ -159,4 +162,3 @@ def calculate_single(model, metric, rmax = None, rmin = None, zmax = None, zmin=
     # print(metric.__name__, np.round(np.mean(output)*100,2), np.round(np.std(output)*100,2))
 
     return np.mean(output), np.std(output)
-
