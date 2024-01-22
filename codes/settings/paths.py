@@ -43,15 +43,15 @@ if not os.path.exists(validation_path):
 
 # ------
 
-rf_path = os.path.join(result_path, 'validation' ,'rf')
+rf_path = os.path.join(result_path, 'rf')
 if not os.path.exists(rf_path):
     os.makedirs(rf_path)
 
-flex_path = os.path.join(result_path,'validation', 'flexcode')
+flex_path = os.path.join(result_path, 'flexcode')
 if not os.path.exists(flex_path):
     os.makedirs(flex_path)
 
-bmdn_path = os.path.join(result_path,'validation', 'bmdn')
+bmdn_path = os.path.join(result_path, 'bmdn')
 if not os.path.exists(bmdn_path):
     os.makedirs(bmdn_path)
 
