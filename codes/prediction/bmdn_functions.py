@@ -33,9 +33,9 @@ def Process_Final(data, feature_list:list, Scaler_1, Scaler_2, aper=aper):
 
     check_pair = lambda x: x[0] if x[1]=='r_PStotal' else x[1]
     if len(colors) > 0:
-        aux_list = [check_pair(feat.split('-')) for feat in feature_list]
+        aux_list = [check_pair(feat.split('-')) for feat in colors]
     elif len(ratios) > 0:
-        aux_list = [check_pair(feat.split('/')) for feat in feature_list]
+        aux_list = [check_pair(feat.split('/')) for feat in ratios]
 
     broad_bool = broad[0] in aux_list
     narrow_bool = narrow[0] in aux_list
@@ -46,7 +46,7 @@ def Process_Final(data, feature_list:list, Scaler_1, Scaler_2, aper=aper):
         data = calculate_colors(data, broad_bool, narrow_bool, wise_bool, galex_bool, aper)
     if len(ratios) > 0:
         data = calculate_ratio(data, broad_bool, narrow_bool, wise_bool, galex_bool, aper)
-    
+
     # Scaling features
     features = Scaler_2.transform(Scaler_1.transform(data[feature_list]))
     
@@ -68,6 +68,11 @@ def Calc_PDF(x, Weights, Means, STDs):
 
 
 def FinalPredict(Model:dict, Testing_Dataframe, Testing_Data_Features, Num_Samples=200):
+    print(type(Model))
+    print(Model)
+    print(type(Testing_Data_Features))
+    print(Testing_Data_Features)
+    print(Testing_Data_Features.shape)
     
     x = np.linspace(0, 5, 5000, endpoint=True)
     
@@ -82,6 +87,10 @@ def FinalPredict(Model:dict, Testing_Dataframe, Testing_Data_Features, Num_Sampl
     for i in tqdm(range(Num_Samples)):
         
         Pred = Model(Testing_Data_Features)
+        if i==0 or i==199:
+            print(type(Pred))
+            print(Pred)
+            print(Pred.shape)
         Weight = Pred.submodules[1].probs_parameter().numpy()
         Mean = Pred.submodules[0].mean().numpy().reshape(len(Testing_Data_Features), np.shape(Weight)[1])
         Std = Pred.submodules[0].stddev().numpy().reshape(len(Testing_Data_Features), np.shape(Weight)[1])
