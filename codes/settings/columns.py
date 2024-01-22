@@ -19,7 +19,7 @@ error_wise = [item+'_ERR' for item in wise]
 error_galex = ['e_'+item for item in galex]
 
 
-def list_feat(aper, broad=None, narrow=None, wise=None, galex=None):
+def list_feat(broad=None, narrow=None, wise=None, galex=None):
     list_feat = []
     features = create_features(aper=aper)
     if broad:
