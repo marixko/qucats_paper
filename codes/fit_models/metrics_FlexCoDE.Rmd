@@ -32,16 +32,17 @@ library(cdetools)
 
 
 ```{r paths}
+setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 wd <- getwd()
 setwd(file.path("..", "..", "data", "crossvalidation"))
 crossvalidation_path <- getwd()
 setwd(file.path("..", "..", "results", "validation", "flexcode"))
 model_path <- getwd() 
-setwd(file.path("..",   "bnn"))
+setwd(file.path("..",   "bmdn"))
 bnn_path <- getwd() 
 setwd(file.path("..", "rf"))
 rf_path <- getwd() 
-setwd(file.path("..", "..", "..", "_img"))
+setwd(file.path("..", "..", "..", "img"))
 img_path <- getwd() 
 setwd(wd)
 ```
@@ -102,10 +103,10 @@ color_narrow <- c("J0378_PStotal.r_PStotal",
                   "r_PStotal.J0660_PStotal",
                   "r_PStotal.J0861_PStotal")
 
-flags <- c("flag_GALEX", "flag_WISE")
+# flags <- c("flag_GALEX", "flag_WISE")
 
-feat_broad <- c(colors_broad,colors_galex,colors_wise, flags)
-feat_all <- c(color_narrow, colors_broad, colors_wise, colors_galex, flags)
+feat_broad <- c(colors_broad,colors_galex,colors_wise)
+feat_all <- c(color_narrow, colors_broad, colors_wise, colors_galex)
 
 ```
 
@@ -114,7 +115,7 @@ feat_all <- c(color_narrow, colors_broad, colors_wise, colors_galex, flags)
 ```{r test}
 # Test
 test = subset(x = test, subset = Z<5) # EXCLUDING Z > 5 objects from test sample
-xtest1=test[c(colors_broad,colors_galex, colors_wise, flags)]
+xtest1=test[c(colors_broad,colors_galex, colors_wise)]
 xtest2=test[feat_all]
 ztest=test["Z"]
 ```
@@ -124,11 +125,11 @@ ztest=test["Z"]
 # Reading models
 
 ```{r models}
-fit0 <- readRDS(file.path(model_path,"fit1.rds"))
-fit1 <- readRDS(file.path(model_path,"fit1_1.rds"))
-fit2 <- readRDS(file.path(model_path,"fit1_2.rds"))
-fit3 <- readRDS(file.path(model_path,"fit1_3.rds"))
-fit4 <- readRDS(file.path(model_path,"fit1_4.rds"))
+fit0 <- readRDS(file.path(model_path,"broad+GALEX+WISE_0.rds"))
+fit1 <- readRDS(file.path(model_path,"broad+GALEX+WISE_1.rds"))
+fit2 <- readRDS(file.path(model_path,"broad+GALEX+WISE_2.rds"))
+fit3 <- readRDS(file.path(model_path,"broad+GALEX+WISE_3.rds"))
+fit4 <- readRDS(file.path(model_path,"broad+GALEX+WISE_4.rds"))
 fits <- list(fit0,fit1,fit2,fit3,fit4)
 ```
 
@@ -154,7 +155,7 @@ colnames(pred) <- paste0("z_flex_pdf_",1:B)
 
 ```{r}
 save <- TRUE
-save_filepath <- file.path(model_path,"test_z_broad+GALEX+WISE+flags.csv")
+save_filepath <- file.path(model_path,"test_z_broad+GALEX+WISE.csv")
 info <- test[,c("RA_1","DEC_1")]
 # add mode of the densities (z_peak), a point estimate of the redshift
 grid <- predict(fits[[1]],data_cov[1,,drop=FALSE],B=B)$z
@@ -187,7 +188,7 @@ write.csv(grid, file.path(model_path, "z_grid.csv"))
 
 
 ```{r}
-saveRDS(pred_mean_broad, file.path(model_path, "pred_mean_broad.rds"))
+saveRDS(pred_mean_broad, file.path(model_path, "pred_mean_broad+GALEX+WISE.rds"))
 ```
 
 ```{r}
@@ -226,7 +227,7 @@ ggplot(cov_broad, aes(x=x)) +
 ```
 
 ```{r}   
-write.csv(cov_broad, file.path(model_path, "pit_broad_flex.csv"))
+write.csv(cov_broad, file.path(model_path, "pit_broad+GALEX+WISE.csv"))
 ```
 
 
@@ -235,11 +236,11 @@ write.csv(cov_broad, file.path(model_path, "pit_broad_flex.csv"))
 Reading models
 
 ```{r models}
-fit0 <- readRDS(file.path(model_path,"fit2.rds"))
-fit1 <- readRDS(file.path(model_path,"fit2_1.rds"))
-fit2 <- readRDS(file.path(model_path,"fit2_2.rds"))
-fit3 <- readRDS(file.path(model_path,"fit2_3.rds"))
-fit4 <- readRDS(file.path(model_path,"fit2_4.rds"))
+fit0 <- readRDS(file.path(model_path,"broad+GALEX+WISE+narrow_0.rds"))
+fit1 <- readRDS(file.path(model_path,"broad+GALEX+WISE+narrow_1.rds"))
+fit2 <- readRDS(file.path(model_path,"broad+GALEX+WISE+narrow_2.rds"))
+fit3 <- readRDS(file.path(model_path,"broad+GALEX+WISE+narrow_3.rds"))
+fit4 <- readRDS(file.path(model_path,"broad+GALEX+WISE+narrow_4.rds"))
 fits <- list(fit0,fit1,fit2,fit3,fit4)
 ```
 
@@ -261,7 +262,7 @@ colnames(pred) <- paste0("z_flex_pdf_",1:B)
 
 ```{r}
 save <- TRUE
-save_filepath <- file.path(model_path,"test_z_broad+GALEX+WISE+narrow+flags.csv")
+save_filepath <- file.path(model_path,"test_z_broad+GALEX+WISE+narrow.csv")
 info <- test[,c("RA_1","DEC_1")]
 # add mode of the densities (z_peak), a point estimate of the redshift
 grid <- predict(fits[[1]],data_cov[1,,drop=FALSE],B=B)$z
@@ -288,7 +289,7 @@ if (save==TRUE) {
 ```
 
 ```{r}
-saveRDS(pred_mean_narrow, file.path(model_path, "pred_mean_narrow.rds"))
+saveRDS(pred_mean_narrow, file.path(model_path, "pred_mean_broad+GALEX+WISE+narrow.rds"))
 ```
 
 ```{r}
@@ -312,19 +313,9 @@ ggplot(cov_narrow, aes(x=x)) +
 ```
 
 ```{r}
-write.csv(cov_narrow, file.path(model_path, "pit_narrow_flex.csv"))
+write.csv(cov_narrow, file.path(model_path, "pit_broad+GALEX+WISE+narrow.csv"))
 ```
 
-```{r}
-importance<-print(fit0)$data
-importance1<-print(fit1)$data
-```
-
-```{r}
-fit0$nIMax
-fit0$bestDelta
-fit0$bestAlpha
-```
 
 
 ```{r}
@@ -342,7 +333,7 @@ print(df[,c(7,8)])
 ```
 
 ```{r}  
-write.csv(df, file.path(model_path, "mean_importances.csv"))
+write.csv(df, file.path(model_path, "mean_importances_broad+GALEX+WISE+narrow.csv"))
 ```
 
 

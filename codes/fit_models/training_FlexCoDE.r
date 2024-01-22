@@ -68,10 +68,10 @@ color_narrow <- c("J0378_PStotal.r_PStotal",
                   "r_PStotal.J0660_PStotal",
                   "r_PStotal.J0861_PStotal")
 
-flags <- c("flag_GALEX", "flag_WISE")
+# flags <- c("flag_GALEX", "flag_WISE")
 
-feat_broad <- c(colors_broad,colors_galex,colors_wise, flags)
-feat_all <- c(color_narrow, colors_broad, colors_wise, colors_galex, flags)
+feat_broad <- c(colors_broad,colors_galex,colors_wise)
+feat_all <- c(color_narrow, colors_broad, colors_wise, colors_galex)
 
 # Fit FlexCoDE without narrow bands
 
@@ -94,7 +94,7 @@ fit1=fitFlexCoDE(xTrain = trainf0[feat_broad],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit1,file.path(model_path,"fit1.rds")) #save model
+saveRDS(fit1,file.path(model_path,"broad+GALEX+WISE_0.rds")) #save model
 rm(fit1)
 
 # Fold 2
@@ -116,7 +116,7 @@ fit1.1=fitFlexCoDE(xTrain = trainf1[feat_broad],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit1.1,file.path(model_path,"fit1_1.rds"))
+saveRDS(fit1.1,file.path(model_path,"broad+GALEX+WISE_1.rds"))
 rm(fit1.1)
 
 # Fold 3
@@ -138,7 +138,7 @@ fit1.2=fitFlexCoDE(xTrain = trainf2[feat_broad],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit1.2,file.path(model_path,"fit1_2.rds"))
+saveRDS(fit1.2,file.path(model_path,"broad+GALEX+WISE_2.rds"))
 rm(fit1.2)
 
 # Fold 4
@@ -160,7 +160,7 @@ fit1.3=fitFlexCoDE(xTrain = trainf3[feat_broad],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit1.3,file.path(model_path,"fit1_3.rds"))
+saveRDS(fit1.3,file.path(model_path,"broad+GALEX+WISE_3.rds"))
 rm(fit1.3)
 
 
@@ -183,7 +183,7 @@ fit1.4=fitFlexCoDE(xTrain = trainf4[feat_broad],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit1.4,file.path(model_path,"fit1_4.rds"))
+saveRDS(fit1.4,file.path(model_path,"broad+GALEX+WISE_4.rds"))
 rm(fit1.4)
 
 
@@ -209,7 +209,8 @@ fit2=fitFlexCoDE(xTrain = trainf0[c(feat_all)],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit2,file.path(model_path,"fit2.rds")) #save model
+saveRDS(fit2,file.path(model_path,"broad+GALEX+WISE+narrow_0.rds")) #save model
+rm(fit2)
 
 # Fold 2
 set.seed(47)
@@ -230,7 +231,8 @@ fit2.1=fitFlexCoDE(xTrain=trainf1[c(feat_all)],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit2.1,file.path(model_path,"fit2_1.rds"))
+saveRDS(fit2.1,file.path(model_path,"broad+GALEX+WISE+narrow_1.rds"))
+rm(fit2.1)
 
 # Fold 3
 set.seed(47)
@@ -251,7 +253,8 @@ fit2.2=fitFlexCoDE(xTrain=trainf2[c(feat_all)],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit2.2,file.path(model_path,"fit2_2.rds"))
+saveRDS(fit2.2,file.path(model_path,"broad+GALEX+WISE+narrow_2.rds"))
+rm(fit2.2)
 
 # Fold 4
 set.seed(47)
@@ -272,7 +275,8 @@ fit2.3=fitFlexCoDE(xTrain=trainf3[c(feat_all)],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit2.3,file.path(model_path,"fit2_3.rds"))
+saveRDS(fit2.3,file.path(model_path,"broad+GALEX+WISE+narrow_3.rds"))
+rm(fit2.3)
 
 # Fold 5
 set.seed(47)
@@ -293,8 +297,8 @@ fit2.4=fitFlexCoDE(xTrain=trainf4[c(feat_all)],
 
 end.time <- Sys.time()
 time.taken1 <- end.time - start.time
-saveRDS(fit2.4,file.path(model_path,"fit2_4.rds"))
-
+saveRDS(fit2.4,file.path(model_path,"broad+GALEX+WISE+narrow_4.rds"))
+rm(fit2.4)
 
 
 
