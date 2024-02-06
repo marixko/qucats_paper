@@ -177,5 +177,5 @@ cython_debug/
 *.sav
 
 # BMDN results
-!/results/validation/bmdn/**/Results_DF.csv
-!/results/validation/bmdn/**/*.txt
+!/results/bmdn/**/*.csv
+!/results/bmdn/**/*.txt
