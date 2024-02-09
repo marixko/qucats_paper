@@ -1,4 +1,4 @@
-import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import os
 import sys
 from pathlib import Path
 from time import sleep
@@ -12,6 +12,9 @@ if str(aux) not in sys.path:
 
 from settings.paths import result_path, bmdn_path
 from bmdn_functions import PredictForFileNoTry
+
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 model_path = os.path.join(bmdn_path, 'final_model_dr4_BNWG')
 predict_path = os.path.join(result_path, 'prediction', 'bmdn')
