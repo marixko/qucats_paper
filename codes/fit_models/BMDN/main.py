@@ -1,14 +1,11 @@
-import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import os
 import sys
-from pathlib import Path
-from random import seed
 import warnings
-warnings.filterwarnings('ignore', category=FutureWarning)
-warnings.filterwarnings('ignore', category=UserWarning)
-warnings.filterwarnings('ignore', category=Warning)
+from random import seed
+from pathlib import Path
 
 import numpy as np
-import tensorflow as tf; tf.get_logger().setLevel('ERROR')
+import tensorflow as tf
 
 aux = os.path.join(Path.cwd(), 'codes')
 if str(aux) not in sys.path:
@@ -21,6 +18,12 @@ from misc.training import train_model, plot_loss
 from misc.sampling import sampling
 from misc.plots import Benchmarks
 
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+tf.get_logger().setLevel('ERROR')
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', category=Warning)
 
 data = 'STRIPE82_DR4_DR16Q1a_unWISE2a_GALEXDR672a.csv'
 model_seed = 47
