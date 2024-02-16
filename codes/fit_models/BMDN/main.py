@@ -29,10 +29,10 @@ data = 'STRIPE82_DR4_DR16Q1a_unWISE2a_GALEXDR672a.csv'
 model_seed = 47
 scheme = 'AllTrain'
 
-mags = ['broad', 'wise', 'galex']
+mags = ['broad', 'narrow', 'wise', 'galex']
 configs = {'mag': False, 'col': True, 'rat': False}
 
-obs = '_dr4_BWG'
+obs = '_dr4_BNWG_800e'
 if scheme == 'KFold':
     test_frac = 0.25
     model_path = os.path.join(bmdn_path, f'crossval_model{obs}', '')
