@@ -32,7 +32,7 @@ scheme = 'AllTrain'
 mags = ['broad', 'narrow', 'wise', 'galex']
 configs = {'mag': False, 'col': True, 'rat': False}
 
-obs = '_dr4_BNWG_800e'
+obs = '_dr4_BNWG_linux_700e'
 if scheme == 'KFold':
     test_frac = 0.25
     model_path = os.path.join(bmdn_path, f'crossval_model{obs}', '')
