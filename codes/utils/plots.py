@@ -155,7 +155,7 @@ def plot_scatter_z(model, per="r", save=False):
 
 
 def plot_metric_per_bin(list_models, data, metric, bins, color_feat, per="r_PStotal", cutoff=5, std=False, save=False,
-                        idx=None):
+                        idx=None, legend=True):
     string = str(list_models[0])
     result = {}
     for model in list_models:
@@ -198,11 +198,13 @@ def plot_metric_per_bin(list_models, data, metric, bins, color_feat, per="r_PSto
         ax.set_ylabel(r"$\sigma_{NMAD}$")   
         
     ax.grid()
-    if len(list_models) > 1:
-        ax.legend(loc="upper right", prop={"size":15})
-    leg = plt.legend()
-    leg_lines = leg.get_lines()
-    plt.setp(leg_lines, linewidth=3)
+
+    if legend:
+        if len(list_models) > 1:
+            ax.legend(loc="upper right", prop={"size":15})
+        leg = plt.legend()
+        leg_lines = leg.get_lines()
+        plt.setp(leg_lines, linewidth=3)
     
     plt.tight_layout()
     if save:

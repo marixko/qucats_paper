@@ -12,7 +12,7 @@ MixtureNormal = tfp.layers.MixtureNormal
 # ML configs #
 units = 196 # Units in the network
 n_layers = 3 # Number of hidden layers in the network
-epochs = 600 # Epochs to train
+epochs = 700 # Epochs to train
 batch_size = 1024 # Batch size
 
 # MDN configs #

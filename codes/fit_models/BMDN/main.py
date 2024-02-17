@@ -1,18 +1,16 @@
-import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import os
 import sys
-from pathlib import Path
-from random import seed
 import warnings
-warnings.filterwarnings('ignore', category=FutureWarning)
-warnings.filterwarnings('ignore', category=UserWarning)
-warnings.filterwarnings('ignore', category=Warning)
+from random import seed
+from pathlib import Path
 
-import numpy as np
-import tensorflow as tf; tf.get_logger().setLevel('ERROR')
-
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 aux = os.path.join(Path.cwd(), 'codes')
 if str(aux) not in sys.path:
     sys.path.append(aux)
+
+import numpy as np
+import tensorflow as tf
 
 from settings.columns import aper
 from settings.paths import bmdn_path
@@ -22,14 +20,19 @@ from misc.sampling import sampling
 from misc.plots import Benchmarks
 
 
+tf.get_logger().setLevel('ERROR')
+warnings.filterwarnings('ignore', category=FutureWarning)
+warnings.filterwarnings('ignore', category=UserWarning)
+warnings.filterwarnings('ignore', category=Warning)
+
 data = 'STRIPE82_DR4_DR16Q1a_unWISE2a_GALEXDR672a.csv'
 model_seed = 47
-scheme = 'AllTrain'
+scheme = 'KFold'
 
 mags = ['broad', 'wise', 'galex']
 configs = {'mag': False, 'col': True, 'rat': False}
 
-obs = '_dr4_BWG'
+obs = '_dr4_BWG_700e'
 if scheme == 'KFold':
     test_frac = 0.25
     model_path = os.path.join(bmdn_path, f'crossval_model{obs}', '')

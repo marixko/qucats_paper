@@ -4,7 +4,7 @@ import numpy as np
 import pandas as pd
 from sklearn.model_selection import train_test_split
 
-from settings.columns import wise, galex, splus, aper, calculate_colors, specz
+from settings.columns import wise, galex, splus, aper, calculate_colors, specz, error_splus
 from utils.correct_extinction import correction
 
 
@@ -68,12 +68,16 @@ def flag_observation(dataframe:pd.DataFrame):
     return df
 
 
-def missing_input(dataframe:pd.DataFrame, input_value=99):
+def missing_input(dataframe:pd.DataFrame, error_limit=None):
+    input_value = 99
     df = dataframe.copy()
     df[wise+galex] = df[wise+galex].fillna(value=input_value)
-    if input_value != 99:
-        df[splus] = df[splus].replace(99, input_value)
-
+    
+    #if error is above limit, replace by input_value:
+    if error_limit:
+        for error in error_splus:
+            df.loc[df[error]>error_limit,error] = input_value
+    
     return df
 
 

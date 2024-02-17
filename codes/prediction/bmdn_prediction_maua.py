@@ -1,4 +1,4 @@
-import os; os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
+import os
 import sys
 from pathlib import Path
 
@@ -6,13 +6,16 @@ aux = os.path.join(Path.cwd(), 'codes')
 if str(aux) not in sys.path:
     sys.path.append(aux)
 
-from tqdm import tqdm
 import joblib
-from tensorflow.keras.models import load_model
+from tqdm import tqdm
 from pandas import read_csv
+from tensorflow.keras.models import load_model
 
 from settings.paths import result_path, bmdn_path
 from bmdn_functions import Process_Final, FinalPredict
+
+
+os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
 
 ## Basically the function PredictForFileNoTry ##
 

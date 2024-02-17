@@ -165,10 +165,12 @@ cython_debug/
 /_*
 
 /data/crossmatch/*
+/data/dr4/*
+/data/referee/*
+
 
 *.fits
 *.txt
-*.csv
 *.rds
 
 *.RData*
@@ -177,5 +179,5 @@ cython_debug/
 *.sav
 
 # BMDN results
-!/results/validation/bmdn/**/Results_DF.csv
-!/results/validation/bmdn/**/*.txt
+!/results/bmdn/**/*.csv
+!/results/bmdn/**/*.txt

@@ -68,14 +68,8 @@ def Calc_PDF(x, Weights, Means, STDs):
 
 
 def FinalPredict(Model:dict, Testing_Dataframe, Testing_Data_Features, Num_Samples=200):
-    print(type(Model))
-    print(Model)
-    print(type(Testing_Data_Features))
-    print(Testing_Data_Features)
-    print(Testing_Data_Features.shape)
     
     x = np.linspace(0, 5, 5000, endpoint=True)
-    
     Result_DF = DataFrame()
     Result_DF['ID'] = Testing_Dataframe['ID'].values
     Result_DF['RA'] = Testing_Dataframe['RA_1'].values
@@ -87,10 +81,6 @@ def FinalPredict(Model:dict, Testing_Dataframe, Testing_Data_Features, Num_Sampl
     for i in tqdm(range(Num_Samples)):
         
         Pred = Model(Testing_Data_Features)
-        if i==0 or i==199:
-            print(type(Pred))
-            print(Pred)
-            print(Pred.shape)
         Weight = Pred.submodules[1].probs_parameter().numpy()
         Mean = Pred.submodules[0].mean().numpy().reshape(len(Testing_Data_Features), np.shape(Weight)[1])
         Std = Pred.submodules[0].stddev().numpy().reshape(len(Testing_Data_Features), np.shape(Weight)[1])

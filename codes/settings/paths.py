@@ -9,10 +9,17 @@ if mycwd.split(os.sep)[-1] == "qucats_paper":
 
 else:
     os.chdir('..')
-    codes_path = os.path.abspath(os.getcwd())
-    os.chdir('..')
-    parent_cwd = os.path.abspath(os.getcwd())
-    os.chdir(mycwd)
+    if mycwd.split(os.sep)[-1] == "codes":
+        codes_path = os.path.abspath(os.getcwd())
+        os.chdir('..')
+        parent_cwd = os.path.abspath(os.getcwd())
+        os.chdir(mycwd)
+    else:
+        os.chdir('..')
+        codes_path = os.path.abspath(os.getcwd())
+        os.chdir('..')
+        parent_cwd = os.path.abspath(os.getcwd())
+        os.chdir(mycwd)
 #%%
 
 
