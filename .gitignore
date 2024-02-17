@@ -181,3 +181,6 @@ cython_debug/
 # BMDN results
 !/results/bmdn/**/*.csv
 !/results/bmdn/**/*.txt
+
+#large train files >100mb
+*train*.csv 
