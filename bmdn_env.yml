@@ -1,4 +1,4 @@
-name: bnn
+name: bmdn
 channels:
   - defaults
 dependencies:
