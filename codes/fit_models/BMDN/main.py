@@ -2,15 +2,16 @@ import os
 import sys
 import warnings
 from random import seed
-from pathlib import Path
 
 os.environ['TF_CPP_MIN_LOG_LEVEL'] = '2'
-aux = os.path.join(Path.cwd(), 'codes')
-if str(aux) not in sys.path:
-    sys.path.append(aux)
 
 import numpy as np
 import tensorflow as tf
+
+main_dir_name = 'qucats_paper'
+mycwd = os.path.abspath(os.getcwd())
+main_dir = os.path.join(mycwd.split(main_dir_name)[0], main_dir_name)
+sys.path.append(os.path.join(main_dir, 'codes'))
 
 from settings.columns import aper
 from settings.paths import bmdn_path

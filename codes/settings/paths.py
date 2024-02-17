@@ -1,44 +1,28 @@
 import os
 
-#%%
+
 mycwd = os.path.abspath(os.getcwd())
-if mycwd.split(os.sep)[-1] == "qucats_paper":
-    parent_cwd = mycwd
-    codes_path = os.path.join(parent_cwd,"codes")
-    pass
 
+main_dir_name = 'qucats_paper'
+
+if main_dir_name in mycwd or os.path.isdir(os.path.join(mycwd, main_dir_name)):
+    main_dir = os.path.join(mycwd.split(main_dir_name)[0], main_dir_name)
 else:
-    os.chdir('..')
-    if mycwd.split(os.sep)[-1] == "codes":
-        codes_path = os.path.abspath(os.getcwd())
-        os.chdir('..')
-        parent_cwd = os.path.abspath(os.getcwd())
-        os.chdir(mycwd)
-    else:
-        os.chdir('..')
-        codes_path = os.path.abspath(os.getcwd())
-        os.chdir('..')
-        parent_cwd = os.path.abspath(os.getcwd())
-        os.chdir(mycwd)
-#%%
+    raise ImportError(f'Current directory does not contain {main_dir_name}.')
+
+codes_path = os.path.join(main_dir, "codes")
+dust_path = os.path.join(codes_path, "utils", "dustmaps")
 
 
-
-data_path = os.path.join(parent_cwd, 'data')
-if not os.path.exists(data_path):
-    os.makedirs(data_path)
-
-result_path = os.path.join(parent_cwd,  'results')
-if not os.path.exists(result_path):
-    os.makedirs(result_path)
-
-img_path = os.path.join(parent_cwd,  'img')
+img_path = os.path.join(main_dir,  'img')
 if not os.path.exists(img_path):
     os.makedirs(img_path)
 
-dust_path = os.path.join(codes_path, "utils", "dustmaps")
 
-# -----
+data_path = os.path.join(main_dir, 'data')
+if not os.path.exists(data_path):
+    os.makedirs(data_path)
+
 match_path = os.path.join(data_path, 'crossmatch')
 if not os.path.exists(match_path):
     os.makedirs(match_path)
@@ -48,7 +32,9 @@ if not os.path.exists(validation_path):
     os.makedirs(validation_path)
 
 
-# ------
+result_path = os.path.join(main_dir,  'results')
+if not os.path.exists(result_path):
+    os.makedirs(result_path)
 
 rf_path = os.path.join(result_path, 'rf')
 if not os.path.exists(rf_path):
@@ -61,5 +47,3 @@ if not os.path.exists(flex_path):
 bmdn_path = os.path.join(result_path, 'bmdn')
 if not os.path.exists(bmdn_path):
     os.makedirs(bmdn_path)
-
-
