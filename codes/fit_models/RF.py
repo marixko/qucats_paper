@@ -47,7 +47,7 @@ test = pd.read_csv(os.path.join(validation_path,"test.csv"), index_col="index", 
 
 # Fine tuning 
     
-run_gridsearch = True
+run_gridsearch = False
 
 if run_gridsearch == False:
     dict_gridsearch = {}
@@ -74,18 +74,18 @@ else:
     dict_gridsearch["broad+GALEX+WISE+narrow"] = CV.best_params_
     print(CV.best_params_)
     
+    
     CV = GridSearchCV(estimator=model, param_grid=param_grid, cv=skf)
     CV.fit(train[feat["broad+GALEX+WISE"]], train.Zclass)
     filename = os.path.join(rf_path,'GridSearch_broad+GALEX+WISE.sav')
     pickle.dump(CV, open(filename, 'wb'))
     dict_gridsearch["broad+GALEX+WISE"] = CV.best_params_
     print(CV.best_params_)
-    
 
 # Crossvalidation
-run_crossvalidation = False
-save_model = False
-save_result = False
+run_crossvalidation = True
+save_model = True
+save_result = True
 z={}
 
 if run_crossvalidation:
@@ -96,9 +96,9 @@ if run_crossvalidation:
 
 # Test
 
-run_test = False
+run_test = True
 save_model = False
-save_result = False
+save_result = True
 
 print("Runnning test")
 mag = pd.DataFrame(test["r_"+aper], columns=["r_"+aper])
