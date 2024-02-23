@@ -289,14 +289,16 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
             ax.axvline(z.loc[idx, 'z'], ls='--', c='k', label='$z_{spec}$')
             ax.set_xlim(0, 5)
             ax.set_xticks(range(6))
+            ax.tick_params(axis='both', which='major', labelsize=14)
+            ax.grid()
             if i == 0:
-                ax.set_title(z_conds[j].replace('z', '$z_{spec}$'))
+                ax.set_title(z_conds[j].replace('z', '$z_{spec}$'), size=16)
             if n_r-i == 1:
-                ax.set_xlabel('$z_{phot}$')
+                ax.set_xlabel('$z_{phot}$', size=16)
             else:
                 ax.set_xticklabels([])
             if j == 0:
-                ax.set_ylabel('$p(z_{phot})$')
+                ax.set_ylabel('$p(z_{phot})$', size=16)
             elif n_z-j == 1:
                 ax2 = ax.twinx()
                 ax2.set_yticks([])
@@ -304,7 +306,7 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
                 
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles=handles[1:], labels=labels[1:], loc='lower center', bbox_to_anchor=(0.5, -0.05),
-               ncol=1+len(models_dict))
+               ncol=1+len(models_dict), fontsize=14)
     fig.align_ylabels()
     fig.tight_layout(pad=0.5)
     if save:
