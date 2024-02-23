@@ -43,32 +43,29 @@ def cols2labels(colnames):
     return colnames
 
 
-def plot_r(data, new):
+def plot_sample(train, test, var:str, save=False):
     
-    fig = plt.figure(figsize=(10,5))
-    bins = np.arange(14, 26, 0.05)
-    data.query("r_iso!=99").r_iso.hist(bins=bins, density=True, alpha=0.6, label="sample")
-    new.query("r_iso!=99").r_iso.hist(bins=bins, density=True, alpha=0.6, label="true")
+    if var == 'r_PStotal':
+        bins = np.arange(16, 22.25, 0.25)
+        xlabel = 'r'
+    elif var == 'Z':
+        bins = np.arange(0, 5.25, 0.25)
+        xlabel = '$z_{spec}$'
+    
+    plt.figure(figsize=(10, 6))
+    plt.hist(train[var], label='Train', bins=bins, log=True, color='#dede00', histtype='step', lw=3)
+    plt.hist(test[var], label='Test', bins=bins, log=True, color='#984ea3')
+    plt.ylabel('Counts')
+    plt.xlabel(xlabel)
     plt.legend()
-    plt.xlabel("r_iso")
-    plt.ylabel("Density")
     plt.tight_layout()
-    
-    return fig
-
-
-def plot_z(data, new):
-    
-    fig = plt.figure(figsize=(10,5))
-    bins = np.arange(0,5,0.025)
-    new.query("Z>0 and Z<5").Z.hist(bins=bins, density=True, alpha=0.6, label="sample")
-    data.query("Z>0 and Z<5").Z.hist(bins=bins, density=True, alpha=0.6, label="true")
-    plt.legend()
-    plt.xlabel("z")
-    plt.ylabel("Density")
-    plt.tight_layout()
-
-    return fig
+    if save:
+        plt.savefig(os.path.join(img_path, f'train_test_{var.split("_")[0]}.png'),
+                    bbox_inches='tight', facecolor='white', dpi=300)
+        plt.savefig(os.path.join(img_path, f'train_test_{var.split("_")[0]}.eps'),
+                    bbox_inches='tight', facecolor='white', format='eps')
+    plt.show()
+    plt.close()
 
 
 def plot_metrics(metric, list_models):
@@ -289,14 +286,16 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
             ax.axvline(z.loc[idx, 'z'], ls='--', c='k', label='$z_{spec}$')
             ax.set_xlim(0, 5)
             ax.set_xticks(range(6))
+            ax.tick_params(axis='both', which='major', labelsize=14)
+            ax.grid()
             if i == 0:
-                ax.set_title(z_conds[j].replace('z', '$z_{spec}$'))
+                ax.set_title(z_conds[j].replace('z', '$z_{spec}$'), size=16)
             if n_r-i == 1:
-                ax.set_xlabel('$z_{phot}$')
+                ax.set_xlabel('$z_{phot}$', size=16)
             else:
                 ax.set_xticklabels([])
             if j == 0:
-                ax.set_ylabel('$p(z_{phot})$')
+                ax.set_ylabel('$p(z_{phot})$', size=16)
             elif n_z-j == 1:
                 ax2 = ax.twinx()
                 ax2.set_yticks([])
@@ -304,7 +303,7 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
                 
     handles, labels = ax.get_legend_handles_labels()
     fig.legend(handles=handles[1:], labels=labels[1:], loc='lower center', bbox_to_anchor=(0.5, -0.05),
-               ncol=1+len(models_dict))
+               ncol=1+len(models_dict), fontsize=14)
     fig.align_ylabels()
     fig.tight_layout(pad=0.5)
     if save:
