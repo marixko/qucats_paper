@@ -36,13 +36,13 @@ setwd(dirname(rstudioapi::getSourceEditorContext()$path))
 wd <- getwd()
 setwd(file.path("..", "..", "data", "crossvalidation"))
 crossvalidation_path <- getwd()
-setwd(file.path("..", "..", "results", "validation", "flexcode"))
+setwd(file.path("..", "..", "results", "flexcode"))
 model_path <- getwd() 
-setwd(file.path("..",   "bnn"))
+setwd(file.path("..",   "bmdn"))
 bnn_path <- getwd() 
 setwd(file.path("..", "rf"))
 rf_path <- getwd() 
-setwd(file.path("..", "..", "..", "_img"))
+setwd(file.path("..", "..", "..", "img"))
 img_path <- getwd() 
 setwd(wd)
 ```
@@ -125,11 +125,11 @@ ztest=test["Z"]
 # Reading models
 
 ```{r models}
-fit0 <- readRDS(file.path(model_path,"fit1.rds"))
-fit1 <- readRDS(file.path(model_path,"fit1_1.rds"))
-fit2 <- readRDS(file.path(model_path,"fit1_2.rds"))
-fit3 <- readRDS(file.path(model_path,"fit1_3.rds"))
-fit4 <- readRDS(file.path(model_path,"fit1_4.rds"))
+fit0 <- readRDS(file.path(model_path,"broad+GALEX+WISE_0.rds"))
+fit1 <- readRDS(file.path(model_path,"broad+GALEX+WISE_1.rds"))
+fit2 <- readRDS(file.path(model_path,"broad+GALEX+WISE_2.rds"))
+fit3 <- readRDS(file.path(model_path,"broad+GALEX+WISE_3.rds"))
+fit4 <- readRDS(file.path(model_path,"broad+GALEX+WISE_4.rds"))
 fits <- list(fit0,fit1,fit2,fit3,fit4)
 ```
 
@@ -350,11 +350,9 @@ grid_z = grid_z$x
 
 ```{r}
 # reading data
-# colors_broad <- read.csv(file.path(bnn_path,"crossval_model-ext-nonb", "Results_DF.csv"))
-# colors_narrow <- read.csv(file.path(bnn_path,"crossval_model-ext-nb", "Results_DF.csv"))
 
-colors_broad <- read.csv(file.path(bnn_path,"bnn_BWG_flag.csv"))
-colors_narrow <- read.csv(file.path(bnn_path,"bnn_BNWG_flag.csv"))
+colors_broad <- read.csv(file.path(bnn_path,"crossval_model_dr4_BWG_700e", "Results_DF.csv"))
+colors_narrow <- read.csv(file.path(bnn_path,"crossval_model_dr4_BNWG_700e", "Results_DF.csv"))
 ```
 
 
