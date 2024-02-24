@@ -69,35 +69,6 @@ def plot_sample(train, test, var:str, save=False):
     plt.close()
 
 
-def plot_metrics(metric, list_models):
-
-    if metric.__name__ == "sigma":
-        ylabel = "$\sigma_{NMAD}$"
-    elif metric.__name__ == "bias":
-        ylabel = "$\eta$"
-    elif metric.__name__ == "out_frac":
-        ylabel = "Outlier Fraction (%)"
-    else:
-        ylabel = "RMSE"
-
-    plt.figure(figsize=(10,6))
-    for key in list_models:
-        
-        if "aug" in key:
-            label = "XDGMM"
-        else:
-            label = "Original"
-            
-        plt.plot(results[key]["bins"], results[key][metric.__name__])
-        plt.scatter(results[key]["bins"], results[key][metric.__name__], label=label)
-        
-    plt.xlim(0, 5)
-    plt.grid(axis="y")
-    plt.ylabel(ylabel)
-    plt.xlabel("Spectroscopic Redshift")
-    plt.legend()
-
-
 def plot_scatter_z(model, per="r", save=False):
     plt.rcParams["font.size"] = 22
     plt.rcParams["ytick.minor.visible"] = True
@@ -250,17 +221,25 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
     n_r = idxs.shape[0]
     n_z = idxs.shape[1]
 
-    fig, axes = plt.subplots(nrows=n_r, ncols=n_z, figsize=(3.8*n_z, 2.4*n_r))
+    if n_r > 1 and n_z > 1: figsize = (3.8*n_z, 2.4*n_r)
+    else: figsize = (6, 4)
+    fig, axes = plt.subplots(nrows=n_r, ncols=n_z, figsize=figsize)
     for i in range(n_r):
         for j in range(n_z):
-            ax = axes[i][j]
-            idx = idxs[i][j]
+            
+            if n_r > 1 and n_z > 1:
+                ax = axes[i][j]
+                idx = idxs[i][j]
+            else:
+                ax = axes
+                idx = idxs[0][0]
             
             sdss_name = sdss.loc[idx, 'SDSS_NAME']
-            ax.plot([], label=f'J{sdss_name}')
-            leg = ax.legend(loc='best', fontsize=10, handlelength=0, handletextpad=0, borderpad=0.1,
-                            framealpha=0.7)
-            leg.get_frame().set_linewidth(0.5)
+            if n_r > 1 and n_z > 1:
+                ax.plot([], label=f'J{sdss_name}')
+                leg = ax.legend(loc='best', fontsize=10, handlelength=0, handletextpad=0, borderpad=0.1,
+                                framealpha=0.7)
+                leg.get_frame().set_linewidth(0.5)
             
             for model_name, df in models_dict.items():
                 
@@ -290,7 +269,10 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
             ax.tick_params(axis='both', which='major', labelsize=14)
             ax.grid()
             if i == 0:
-                ax.set_title(z_conds[j].replace('z', '$z_{spec}$'), size=16)
+                if n_r > 1 and n_z > 1:
+                    ax.set_title(z_conds[j].replace('z', '$z_{spec}$'), size=16)
+                else:
+                    ax.set_title(f'J{sdss_name}', size=16)
             if n_r-i == 1:
                 ax.set_xlabel('$z_{phot}$', size=16)
             else:
@@ -301,15 +283,17 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
                 ax2 = ax.twinx()
                 ax2.set_yticks([])
                 ax2.set_ylabel(r_conds[i].replace(f'r_PStotal', '$r$'), rotation=270, labelpad=16, size=16)
-                
-    handles, labels = ax.get_legend_handles_labels()
-    fig.legend(handles=handles[1:], labels=labels[1:], loc='lower center', bbox_to_anchor=(0.5, -0.05),
-               ncol=1+len(models_dict), fontsize=14)
+    if n_z > 1:        
+        handles, labels = ax.get_legend_handles_labels()
+        fig.legend(handles=handles[1:], labels=labels[1:], loc='lower center', bbox_to_anchor=(0.5, -0.05),
+                ncol=1+len(models_dict), fontsize=14)
+    else: ax.legend(fontsize=12)
     fig.align_ylabels()
     fig.tight_layout(pad=0.5)
     if save:
-        plt.savefig(os.path.join(img_path, f'PDFs_{alg}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
-        plt.savefig(os.path.join(img_path, f'PDFs_{alg}.eps'),  bbox_inches='tight', facecolor='white', format='eps')
+        name = f'PDFs_{alg}' if n_r > 1 and n_z > 1 else f'J{sdss_name}_{alg}'
+        plt.savefig(os.path.join(img_path, f'{name}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
+        plt.savefig(os.path.join(img_path, f'{name}.eps'),  bbox_inches='tight', facecolor='white', format='eps')
     plt.show()
     plt.close()
 
