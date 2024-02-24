@@ -125,13 +125,13 @@ def Q(alpha:int, x, cdf_object, lower=True):
 
 ## Printing functions ##
 
-def print_metrics_xval(z, idx_per_fold = None):
+def print_metrics_xval(z, idx_per_fold=None, r=4):
+    
     rmse_list = []
     sigma_list = []
     bias_list = []
     n30_list = []
     n15_list = []
-
 
     for fold in z.fold.unique():
         if idx_per_fold:
@@ -145,17 +145,18 @@ def print_metrics_xval(z, idx_per_fold = None):
         n30_list.append(out_frac(z_copy[z_copy["fold"]==fold].Z, z_copy[z_copy["fold"]==fold].z_pred, 0.3))
         n15_list.append(out_frac(z_copy[z_copy["fold"]==fold].Z, z_copy[z_copy["fold"]==fold].z_pred, 0.15))
 
-    print('RMSE', np.round(np.mean(rmse_list),4), np.round(np.std(rmse_list),4))
-    print('NMAD', np.round(np.mean(sigma_list),4),  np.round(np.std(sigma_list),4))
-    print('bias', np.round(np.mean(bias_list),4),  np.round(np.std(bias_list),4))
-    print('n15', np.round(np.mean(n15_list),4),  np.round(np.std(n15_list),4))
-    print('n30', np.round(np.mean(n30_list),4),  np.round(np.std(n30_list),4))
+    print('RMSE', np.round(np.mean(rmse_list), r), np.round(np.std(rmse_list), r))
+    print('NMAD', np.round(np.mean(sigma_list), r),  np.round(np.std(sigma_list), r))
+    print('bias', np.round(np.mean(bias_list), r),  np.round(np.std(bias_list), r))
+    print('n15', np.round(np.mean(n15_list), r),  np.round(np.std(n15_list), r))
+    print('n30', np.round(np.mean(n30_list), r),  np.round(np.std(n30_list), r))
     return
 
-def print_metrics_test(z_true, z_pred):
-    print('RMSE', np.round(rmse(z_true,z_pred),4))
-    print('NMAD', np.round(nmad(z_true,z_pred),4))
-    print('bias', np.round(bias(z_true,z_pred),4))
-    print('n15', np.round(out_frac(z_true,z_pred, 0.15),4))
-    print('n30', np.round(out_frac(z_true,z_pred, 0.30),4))
+
+def print_metrics_test(z_true, z_pred, r=4):
+    print('RMSE', np.round(rmse(z_true,z_pred), r))
+    print('NMAD', np.round(nmad(z_true,z_pred), r))
+    print('bias', np.round(bias(z_true,z_pred), r))
+    print('n15', np.round(out_frac(z_true,z_pred, 0.15), r))
+    print('n30', np.round(out_frac(z_true,z_pred, 0.30), r))
     return
