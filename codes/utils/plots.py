@@ -3,6 +3,7 @@ import os
 
 import numpy as np
 import pandas as pd
+from scipy.stats import binom
 import matplotlib.pyplot as plt
 import matplotlib.colors as MplColors
 
@@ -309,5 +310,54 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
     if save:
         plt.savefig(os.path.join(img_path, f'PDFs_{alg}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
         plt.savefig(os.path.join(img_path, f'PDFs_{alg}.eps'),  bbox_inches='tight', facecolor='white', format='eps')
+    plt.show()
+    plt.close()
+
+
+def plot_with_uniform_band(alg:str, models_dict:dict, colors_dict:dict, ci_level=0.95, n_bins=50, save=False):    
+    '''
+    Plots the PIT/HPD histogram and calculates the confidence interval for the bin values,
+    were the PIT/HPD values follow an uniform distribution
+    
+    (Aesthetically) Modified from: https://github.com/lee-group-cmu/cdetools/blob/master/python/src/cdetools/plot_utils.py
+
+    @param alg: WRITE
+    @param models_dict: WRITE
+    @param colors_dict: WRITE
+    @param ci_level: a float between 0 and 1 indicating the size of the confidence level
+    @param n_bins: an integer, the number of bins in the histogram
+
+    @returns The matplotlib figure object with the histogram of the PIT/HPD values and the CI for the uniform distribution
+    '''
+
+    # Extract the number of CDEs
+    n = len(list(models_dict.values())[0])
+
+    # Creating upper and lower limit for selected uniform band
+    ci_quantity = (1-ci_level) / 2
+    low_lim = binom.ppf(q=ci_quantity, n=n, p=1/n_bins)
+    upp_lim = binom.ppf(q=ci_level + ci_quantity, n=n, p=1/n_bins)
+
+    # Creating figure
+    plt.figure(figsize=(12,7))
+    
+    for model_name, values in models_dict.items():
+        plt.hist(values, bins=n_bins, label=model_name, color=colors_dict[model_name], histtype='step', lw=4)
+    
+    plt.axhline(y=low_lim, color='grey')
+    plt.axhline(y=upp_lim, color='grey')
+    plt.axhline(y=n/n_bins, label='Uniform Average (95% CI)', color='#555555', linewidth=4)
+    plt.fill_between(x=np.linspace(0, 1, 100), y1=np.repeat(low_lim, 100), y2=np.repeat(upp_lim, 100),
+                     color='grey', alpha=0.2)
+    plt.xticks()
+    plt.yticks()
+    plt.xlim(-0.01, 1.01)
+    plt.xlabel('PIT values')
+    plt.ylabel('Counts')
+    plt.title(alg)
+    plt.legend(loc='upper center', fontsize=18)
+    if save:
+        plt.savefig(os.path.join(img_path, f'PIT_{alg}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
+        plt.savefig(os.path.join(img_path, f'PIT_{alg}.eps'),  bbox_inches='tight', facecolor='white', format='eps')
     plt.show()
     plt.close()
