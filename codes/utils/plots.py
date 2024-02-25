@@ -214,7 +214,7 @@ def metrics_bin(data, metric, bins="None", var="g-r"):
     return result
 
 
-def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, save=False):
+def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, title, save=False):
     
     r_conds = [f'r_PStotal < 20', f'20 < r_PStotal < 21.3', f'r_PStotal > 21.3']
     z_conds = ['z < 0.5', '0.5 < z < 3.5', '3.5 < z < 5']
@@ -236,7 +236,7 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
             
             sdss_name = sdss.loc[idx, 'SDSS_NAME']
             if n_r > 1 and n_z > 1:
-                ax.plot([], label=f'J{sdss_name}')
+                ax.plot([], label=f'SDSS J{sdss_name}')
                 leg = ax.legend(loc='best', fontsize=10, handlelength=0, handletextpad=0, borderpad=0.1,
                                 framealpha=0.7)
                 leg.get_frame().set_linewidth(0.5)
@@ -251,11 +251,11 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
                         weights * (1/(stds*np.sqrt(2*np.pi))) * np.exp((-1/2)*((x[:, None]-means)**2)/(stds)**2),
                         axis=1)
                     pdf = pdf / np.trapz(pdf, x)
-                    # ax.axvline(df.loc[idx, 'zphot'], ls='--', c=colors_dict[model_name])
+                    ax.axvline(df.loc[idx, 'zphot'], ls='--', c=colors_dict[model_name])
                 
                 elif alg == 'FlexCoDE':
                     pdf = df.loc[idx, [f'z_flex_pdf_{i}' for i in range(1, 201)]].values
-                    # ax.axvline(df.loc[idx, 'z_flex_peak'], ls='--', c=colors_dict[model_name])
+                    ax.axvline(df.loc[idx, 'z_flex_peak'], ls='--', c=colors_dict[model_name])
                 
                 else:
                     print('"alg" param must be "BMDN" or "FlexCoDE"')
@@ -263,11 +263,15 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
                 
                 ax.plot(x, pdf, c=colors_dict[model_name], label=model_name)
             
-            ax.axvline(z.loc[idx, 'z'], ls='--', c='k', label='$z_{spec}$')
+            # ax.axvline(z.loc[idx, 'z'], ls=':', c='k', label='$z_{spec}$')
+            ax.scatter(z.loc[idx, 'z'], -0, c='#333333', s=120, marker="^", label='$z_{spec}$', zorder=12233)
+
             ax.set_xlim(0, 5)
+            ax.set_ylim(0, 1.3* np.max(pdf))
+            
             ax.set_xticks(range(6))
             ax.tick_params(axis='both', which='major', labelsize=14)
-            ax.grid()
+            # ax.grid()
             if i == 0:
                 if n_r > 1 and n_z > 1:
                     ax.set_title(z_conds[j].replace('z', '$z_{spec}$'), size=16)
@@ -289,7 +293,9 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, sav
                 ncol=1+len(models_dict), fontsize=14)
     else: ax.legend(fontsize=12)
     fig.align_ylabels()
+    plt.suptitle(title, fontsize=18)
     fig.tight_layout(pad=0.5)
+    
     if save:
         name = f'PDFs_{alg}' if n_r > 1 and n_z > 1 else f'J{sdss_name}_{alg}'
         plt.savefig(os.path.join(img_path, f'{name}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
