@@ -4,8 +4,10 @@ import os
 import numpy as np
 import pandas as pd
 from scipy.stats import binom
+import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as MplColors
+import matplotlib.gridspec as gridspec
 
 from settings.paths import validation_path, img_path
 from utils.preprocessing import create_bins
@@ -42,31 +44,6 @@ def cols2labels(colnames):
         except:
             pass
     return colnames
-
-
-def plot_sample(train, test, var:str, save=False):
-    
-    if var == 'r_PStotal':
-        bins = np.arange(16, 22.25, 0.25)
-        xlabel = 'r'
-    elif var == 'Z':
-        bins = np.arange(0, 5.25, 0.25)
-        xlabel = '$z_{spec}$'
-    
-    plt.figure(figsize=(10, 6))
-    plt.hist(train[var], label='Train', bins=bins, log=True, color='#dede00', histtype='step', lw=3)
-    plt.hist(test[var], label='Test', bins=bins, log=True, color='#984ea3')
-    plt.ylabel('Counts')
-    plt.xlabel(xlabel)
-    plt.legend()
-    plt.tight_layout()
-    if save:
-        plt.savefig(os.path.join(img_path, f'train_test_{var.split("_")[0]}.png'),
-                    bbox_inches='tight', facecolor='white', dpi=300)
-        plt.savefig(os.path.join(img_path, f'train_test_{var.split("_")[0]}.eps'),
-                    bbox_inches='tight', facecolor='white', format='eps')
-    plt.show()
-    plt.close()
 
 
 def plot_scatter_z(model, per="r", save=False):
@@ -214,7 +191,7 @@ def metrics_bin(data, metric, bins="None", var="g-r"):
     return result
 
 
-def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, title, save=False):
+def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, title:str, save=False):
     
     r_conds = [f'r_PStotal < 20', f'20 < r_PStotal < 21.3', f'r_PStotal > 21.3']
     z_conds = ['z < 0.5', '0.5 < z < 3.5', '3.5 < z < 5']
@@ -349,5 +326,82 @@ def plot_with_uniform_band(alg:str, models_dict:dict, colors_dict:dict, ci_level
     if save:
         plt.savefig(os.path.join(img_path, f'PIT_{alg}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
         plt.savefig(os.path.join(img_path, f'PIT_{alg}.eps'),  bbox_inches='tight', facecolor='white', format='eps')
+    plt.show()
+    plt.close()
+
+
+def density_map(data, x:list, y:str, n_fields:int, per_area=True, save=False):
+
+    area = 1.4 * 1.4 * n_fields
+
+    fig = plt.figure(figsize=(27, 5))
+    gs = gridspec.GridSpec(nrows=2, ncols=5, figure=fig,
+                           width_ratios=[1, 1, 1, 1, 1/15], height_ratios=[1, 3],
+                           wspace=0.07, hspace=0.06)
+
+    cmap = mpl.cm.get_cmap("jet", 8).copy()
+    cmap.set_under(color='black')
+    
+    y = data[y].to_numpy()
+    yedges = np.arange(np.min(y), np.max(y)+0.1, 0.1)
+    half_bins = np.arange(0.05, 5.05, 0.1)
+    
+    ax1d_top = fig.add_subplot(gs[0, 0])
+    axes1d = [ax1d_top] + [fig.add_subplot(gs[0, i], sharey=ax1d_top) for i in range(1, 4)]
+    ax2d_bottom = fig.add_subplot(gs[1, 0])
+    axes2d = [ax2d_bottom] + [fig.add_subplot(gs[1, i], sharey=ax2d_bottom) for i in range(1, 4)]
+    
+    
+    for method, i, name  in zip(x, [0, 1, 2, 3], ["RF", "BMDN", "FlexCoDE", "Average"]):
+        
+        x = data[method].to_numpy()
+        xedges = np.arange(0, 5.1, 0.1)
+        h, xedges, yedges = np.histogram2d(x, y, bins=[xedges, yedges])
+        
+        ax1d = axes1d[i]
+        ax2d = axes2d[i]
+
+        if per_area:
+            im = ax2d.imshow(h.T/area, origin='lower',
+                    extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]],
+                    aspect='auto', interpolation='nearest', cmap=cmap, vmin=1e-8)
+        else:
+            im = ax2d.imshow(h.T, origin='lower',
+                    extent=[xedges[0], xedges[-1], yedges[0], yedges[-1]],
+                    aspect='auto', interpolation='nearest', cmap=cmap, vmin=1e-8)
+        ax2d.set_xlabel(r"$z_{phot}$")
+        
+        
+        n, _ = np.histogram(data[method], bins=np.arange(0, 5.1, 0.1))
+        ax1d.plot(half_bins, n/area, '-k', lw=1)
+        ax1d.scatter(half_bins, n/area, color="black", s=10)
+        ax1d.set_xticks([])
+        ax1d.set_yticks([10, 25])
+
+        ax2d.text(0.95, 0.08, name, horizontalalignment='right', verticalalignment='center',
+                     transform = ax2d.transAxes, color="white")
+        ax2d.set_xticks([0.5, 1.5, 2.5, 3.5, 4.5])
+
+        ax1d.tick_params(axis='y', which='major')
+        ax2d.tick_params(axis='both', which='major')
+
+        if i == 0:
+            ax2d.set_ylabel(r"$r$")
+            ax2d.set_yticks(list(range(17, 22)))
+            ax1d.set_ylabel(r"N/deg$^2$")
+        else:
+            axes1d[i].tick_params(axis='y', which='both', left=False, labelleft=False)
+            axes2d[i].tick_params(axis='y', which='both', left=False, labelleft=False)
+    
+    cbar_ax = fig.add_subplot(gs[:, 4])
+    cb = plt.colorbar(im, cax=cbar_ax, pad=0.001)
+    if per_area:
+        cb.set_label(r'Candidates per deg$^2$')
+    else:
+        cb.formatter.set_powerlimits((0, 0))
+    
+    if save:
+        plt.savefig(os.path.join(img_path, 'density_map.png'), bbox_inches='tight', facecolor='white', dpi=300)
+        plt.savefig(os.path.join(img_path, 'density_map.eps'), bbox_inches='tight', facecolor='white', format='eps')
     plt.show()
     plt.close()
