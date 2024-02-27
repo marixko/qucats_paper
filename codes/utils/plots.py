@@ -8,6 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as MplColors
 import matplotlib.gridspec as gridspec
+from matplotlib.ticker import MultipleLocator
 
 from settings.paths import validation_path, img_path
 from utils.preprocessing import create_bins
@@ -142,7 +143,8 @@ def plot_metric_per_bin(list_models, data, metric, bins, color_feat, per="r_PSto
         ax.set_ylabel("MSE")
     else:
         ax.set_ylabel(r"$\sigma_{NMAD}$")   
-        
+    
+    ax.xaxis.set_minor_locator(MultipleLocator(bins[1]-bins[0]))
     ax.grid()
 
     if legend:
