@@ -8,6 +8,7 @@ import matplotlib as mpl
 import matplotlib.pyplot as plt
 import matplotlib.colors as MplColors
 import matplotlib.gridspec as gridspec
+from matplotlib.ticker import MultipleLocator
 
 from settings.paths import validation_path, img_path
 from utils.preprocessing import create_bins
@@ -142,7 +143,8 @@ def plot_metric_per_bin(list_models, data, metric, bins, color_feat, per="r_PSto
         ax.set_ylabel("MSE")
     else:
         ax.set_ylabel(r"$\sigma_{NMAD}$")   
-        
+    
+    ax.xaxis.set_minor_locator(MultipleLocator(bins[1]-bins[0]))
     ax.grid()
 
     if legend:
@@ -156,6 +158,7 @@ def plot_metric_per_bin(list_models, data, metric, bins, color_feat, per="r_PSto
     if save:
         plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".png"),
                      facecolor="white", transparent=False)
+        ax.set_rasterized(True)
         plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".eps"),
                      facecolor="white", transparent=False, format="eps")
     return fig
@@ -306,25 +309,24 @@ def plot_with_uniform_band(alg:str, models_dict:dict, colors_dict:dict, ci_level
     upp_lim = binom.ppf(q=ci_level + ci_quantity, n=n, p=1/n_bins)
 
     # Creating figure
-    plt.figure(figsize=(12,7))
+    _, ax = plt.subplots(figsize=(12,7))
     
     for model_name, values in models_dict.items():
-        plt.hist(values, bins=n_bins, label=model_name, color=colors_dict[model_name], histtype='step', lw=4)
+        ax.hist(values, bins=n_bins, label=model_name, color=colors_dict[model_name], histtype='step', lw=4)
     
-    plt.axhline(y=low_lim, color='grey')
-    plt.axhline(y=upp_lim, color='grey')
-    plt.axhline(y=n/n_bins, label='Uniform Average (95% CI)', color='#555555', linewidth=4)
-    plt.fill_between(x=np.linspace(0, 1, 100), y1=np.repeat(low_lim, 100), y2=np.repeat(upp_lim, 100),
+    ax.axhline(y=low_lim, color='grey')
+    ax.axhline(y=upp_lim, color='grey')
+    ax.axhline(y=n/n_bins, label='Uniform Average (95% CI)', color='#555555', linewidth=4)
+    ax.fill_between(x=np.linspace(0, 1, 100), y1=np.repeat(low_lim, 100), y2=np.repeat(upp_lim, 100),
                      color='grey', alpha=0.2)
-    plt.xticks()
-    plt.yticks()
-    plt.xlim(-0.01, 1.01)
-    plt.xlabel('PIT values')
-    plt.ylabel('Counts')
-    plt.title(alg)
-    plt.legend(loc='upper center', fontsize=18)
+    ax.set_xlim(-0.01, 1.01)
+    ax.set_xlabel('PIT values')
+    ax.set_ylabel('Counts')
+    ax.set_title(alg)
+    ax.legend(loc='upper center', fontsize=18)
     if save:
         plt.savefig(os.path.join(img_path, f'PIT_{alg}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
+        ax.set_rasterized(True)
         plt.savefig(os.path.join(img_path, f'PIT_{alg}.eps'),  bbox_inches='tight', facecolor='white', format='eps')
     plt.show()
     plt.close()
