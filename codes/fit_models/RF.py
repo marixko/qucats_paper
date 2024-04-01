@@ -40,6 +40,10 @@ feat["broad+WISE+narrow"]=  create_colors(broad = True, narrow=True, wise=False,
 
 feat["broad+GALEX+WISE+narrow"]=  create_colors(broad = True, narrow=True, wise=True, galex=True, aper=aper)
 
+# feat["broad+WISE"] =  create_colors(broad = True, narrow=False, wise=True, galex=False, aper=aper)
+
+# feat["broad+GALEX"] =  create_colors(broad = True, narrow=False, wise=False, galex=True, aper=aper)
+
 # Read data
 train = pd.read_csv(os.path.join(validation_path,"train.csv"), index_col="index", low_memory=False)
 test = pd.read_csv(os.path.join(validation_path,"test.csv"), index_col="index", low_memory=False) 
