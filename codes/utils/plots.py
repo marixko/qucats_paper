@@ -308,21 +308,23 @@ def plot_with_uniform_band(alg:str, models_dict:dict, colors_dict:dict, ci_level
     upp_lim = binom.ppf(q=ci_level + ci_quantity, n=n, p=1/n_bins)
 
     # Creating figure
-    _, ax = plt.subplots(figsize=(12,7))
+    plt.figure(figsize=(12,7))
     
     for model_name, values in models_dict.items():
-        ax.hist(values, bins=n_bins, label=model_name, color=colors_dict[model_name], histtype='step', lw=4)
+        plt.hist(values, bins=n_bins, label=model_name, color=colors_dict[model_name], histtype='step', lw=4)
     
-    ax.axhline(y=low_lim, color='grey')
-    ax.axhline(y=upp_lim, color='grey')
-    ax.axhline(y=n/n_bins, label='Uniform Average (95% CI)', color='#555555', linewidth=4)
-    ax.fill_between(x=np.linspace(0, 1, 100), y1=np.repeat(low_lim, 100), y2=np.repeat(upp_lim, 100),
+    plt.axhline(y=low_lim, color='grey')
+    plt.axhline(y=upp_lim, color='grey')
+    plt.axhline(y=n/n_bins, label='Uniform Average (95% CI)', color='#555555', linewidth=4)
+    plt.fill_between(x=np.linspace(0, 1, 100), y1=np.repeat(low_lim, 100), y2=np.repeat(upp_lim, 100),
                      color='grey', alpha=0.2)
-    ax.set_xlim(-0.01, 1.01)
-    ax.set_xlabel('PIT values')
-    ax.set_ylabel('Counts')
-    ax.set_title(alg)
-    ax.legend(loc='upper center', fontsize=18)
+    plt.xticks()
+    plt.yticks()
+    plt.xlim(-0.01, 1.01)
+    plt.xlabel('PIT values')
+    plt.ylabel('Counts')
+    plt.title(alg)
+    plt.legend(loc='upper center', fontsize=18)
     if save:
         plt.savefig(os.path.join(img_path, f'PIT_{alg}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
         plt.savefig(os.path.join(img_path, f'PIT_{alg}.pdf'),  bbox_inches='tight', facecolor='white', format='pdf',
