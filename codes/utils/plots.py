@@ -22,7 +22,7 @@ plt.rcParams["xtick.minor.visible"] = True
 CB_color_cycle = ["#377eb8", "#ff7f00", "#4daf4a", "#f781bf", "#a65628", "#984ea3", "#999999", "#e41a1c", "#dede00"]
 
 
-def cols2labels(colnames):
+def cols2labels(colnames:dict):
     """cols2labels modifies column names for plots
 
     Parameters
@@ -101,8 +101,8 @@ def plot_scatter_z(model, per="r", save=False):
     # ax.set_ylabel(dict_df[name][column+"_median"].name)
 
 
-def plot_metric_per_bin(list_models, data, metric, bins, color_feat, per="r_PStotal", cutoff=5, std=False, save=False,
-                        idx=None, legend=True):
+def plot_metric_per_bin(list_models:list, data:dict, metric, bins, color_feat:dict, per="r_PStotal", std=False,
+                        save=False, legend=True):
     string = str(list_models[0])
     result = {}
     for model in list_models:
@@ -158,8 +158,8 @@ def plot_metric_per_bin(list_models, data, metric, bins, color_feat, per="r_PSto
     if save:
         plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".png"),
                      facecolor="white", transparent=False)
-        plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".eps"),
-                     facecolor="white", transparent=False, format="eps")
+        plt.savefig(os.path.join(img_path, string+"_"+metric.__name__+"_"+per+".pdf"),
+                     facecolor="white", transparent=False, format="pdf", dpi=300)
     return fig
 
 
@@ -283,7 +283,7 @@ def plot_PDFs(alg:str, models_dict:dict, sdss, z, x, idxs, colors_dict:dict, tit
     plt.close()
 
 
-def plot_with_uniform_band(alg:str, models_dict:dict, colors_dict:dict, ci_level=0.95, n_bins=50, save=False):    
+def plot_with_uniform_band(alg:str, models_dict:dict, colors_dict:dict, ci_level=0.95, n_bins=50, save=False):
     '''
     Plots the PIT/HPD histogram and calculates the confidence interval for the bin values,
     were the PIT/HPD values follow an uniform distribution
@@ -327,7 +327,8 @@ def plot_with_uniform_band(alg:str, models_dict:dict, colors_dict:dict, ci_level
     plt.legend(loc='upper center', fontsize=18)
     if save:
         plt.savefig(os.path.join(img_path, f'PIT_{alg}.png'),  bbox_inches='tight', facecolor='white', dpi=300)
-        plt.savefig(os.path.join(img_path, f'PIT_{alg}.eps'),  bbox_inches='tight', facecolor='white', format='eps')
+        plt.savefig(os.path.join(img_path, f'PIT_{alg}.pdf'),  bbox_inches='tight', facecolor='white', format='pdf',
+                    dpi=300)
     plt.show()
     plt.close()
 
